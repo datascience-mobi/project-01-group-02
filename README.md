@@ -7,6 +7,7 @@ Load the dataset:
  - Removing Missing values 
  - Restruckurierung der Daten, Preparing the Data for further analysis 
  - Getting to know our data, how we can work with it and information we can get out of it 
+ 
 2.Descriptive Statistics and Graphical representation 
 - Summary of the data
 - Graphics variability of gene expression 
@@ -18,8 +19,9 @@ Load the dataset:
  - Wie wichtig sind die Mutationen für das Cellsurvival --> Counts of the Mutations im Vergleich mit der Ceres Datenbank 
  
 4. Statistical testing 
-- t-test : welche Secoundary Mutations hängen mit welchem 
+- t-test : welche Secoundary Mutations hängen mit welchen driver mutations zusammen? 
 
+5. Lineare Regression 
  
  - 
  
