@@ -41,7 +41,7 @@ Load the dataset:
  - Wie wichtig sind die Mutationen fÃ¼r das Cellsurvival --> Counts of the Mutations im Vergleich mit der Ceres Datenbank 
  
 4. Statistical testing 
-- t-test : welche Secoundary Mutations hÃ¤ngen mit welchem
+- t-test : welche Secoundary Mutations hängen mit welchem Driver mutations zusammen?
 
 5. linear Regression
  - 
