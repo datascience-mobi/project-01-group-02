@@ -123,30 +123,8 @@ save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.
 load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS")
 ```
 
-## Cleaning the dataset form uninformative/unimportant columns and rows
-
-* rownames(allDepMap_annotation_SkinCancer)= allDepMap_annotation_SkinCancer$DepMap_ID
-* allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[ , -which(colnames(allDepMap_annotation_SkinCancer) %in% c("DepMap_ID", "Aliases", "Gender", "Source")) ]
 
 
-Reordering of the rows:
 
-* allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[c(1:13, 15:19, 21:26, 27:34, 14, 20, 27), ]
-* allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[c(1:20, 22:24, 31:34,21, 29,30,25:28), ]
-summary(allDepMap_annotation_SkinCancer)
 
-Making the data nominal: 
-
-* allDepMap_annotation_SkinCancer$Subtype.Disease = factor(allDepMap_annotation_SkinCancer$Subtype.Disease)
-* allDepMap_annotation_SkinCancer$Primary.Disease = factor(allDepMap_annotation_SkinCancer$Primary.Disease)
-summary(allDepMap_annotation_SkinCancer)
-
-```{r}
-mis.val = apply(allDepMap_expression_SkinCancer, 1, function(x) {sum(is.na(x))})
-```
-
-Alle Zeilen werden angezeigt mit der Anzahl der missing values die ersten 10 Zeilen
-```{r}
-mis.val [1:10]
-```
 
