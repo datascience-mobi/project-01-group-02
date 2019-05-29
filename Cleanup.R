@@ -173,4 +173,4 @@ sum(isTRUE(which(elif>0)))
 ## Speichern der gesäuberten Daten
 
 save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
-load("C:/Users/LeoTh/Documents/GitHub/CellCancerLinesafterCleanup.RDS")
+load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
