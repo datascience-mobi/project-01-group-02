@@ -36,14 +36,23 @@ while(i<length(a)+1){i = i +1; print(length(which(allDepMap_mutation_SkinCancer$
 # und die Reihen die Mutationen 
 #aber 
 
+# die namen der Celllinien hat eig die gleiche auswirkung wie Vektor c(1:34) 
+elif = names(allDepMap_mutation_SkinCancer)
+i = 0
+b = 0 
+# Namen aller Gene welche auch in unsere Expressionsmatrix eine Rolle spielen 
 
+a = rownames(allDepMap_expression_SkinCancer)
+#while(b< length(a)+1){b = b+1; i = 0;  while(i<length(elif)+1){i = i +1; print(length(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== a[b])));}}
 
+# mir wird hier allerdings deutlich zu wenig ausgegeben
+# war ein fehler von mir da ich das i nicht jedes mal wieder auf 0 gesetzt habe sondern nur einmal auserhalb 
+# while schleife und dann nichtmehr daher ist die innere Schleife nur genau einmal abgelaufen weil i schon zu anfang nicht mehr <34 war
 
+Anzahlmutation <- c()
+while(b< length(a)+1){b = b+1; i = 0; Spalte <- c();  while(i<length(elif)+1){i = i +1;Spalte[i] <- length(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== a[b]));}; Anzahlmutation[b] <- Spalte;}
 
-
-
-
-
+# warum wird mir keine Matrix erstellt ? 
 
 
 

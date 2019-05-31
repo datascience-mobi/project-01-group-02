@@ -63,92 +63,37 @@ rmv.rows = apply(allDepMap_kd.prob_SkinCancer, 1, function(x) {sum(is.na(x))})
 # aber wie bei der annotation matrix sollten wir nicht schauen welche Mutationen viele Nas haben 
 # sondern welche observations in verschiedenen Mutationen missing value lifern 
 # also nicht alle NAs pro Reihe(was dann die Mutationen wären) sondern pro Observables (hier also die Spalten )
-rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 1, function (x){sum(is.na(x))})
-rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 2, function (x){sum(is.na(x))})
+#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 1, function (x){sum(is.na(x))})
+#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 2, function (x){sum(is.na(x))})
 
 # rmv.rows speichert nun alle spalten für die Nas auftretten 
-allDepMap_mutation_SkinCancer$`ACH-000274` = allDepMap_mutation_SkinCancer$`ACH-000274`[, -which(rmv.rows>0)]
+#allDepMap_mutation_SkinCancer$`ACH-000274` = allDepMap_mutation_SkinCancer$`ACH-000274`[, -which(rmv.rows>0)]
 # diese Spalten werden aus der Datenmatrix entfernt 
 # das ist aber nur eine zellline jtzt müssen wir es noch für alle 34 Zelllinien machen 
 
-zelllines <- names(allDepMap_mutation_SkinCancer)
-for(i in 1:34){rmv.rows = apply (allDepMap_mutation_SkinCancer[zelllines[i]], 2, function (x){sum(is.na(x))}); print(rmv.rows);}
-Error in apply(allDepMap_mutation_SkinCancer[zelllines[i]], 2, function(x) { : 
-    dim(X) muss positive Länge haben
-  for(i in 1:34){allDepMap_mutation_SkinCancer[zelllines[i]]` = allDepMap_mutation_SkinCancer[zelllines[i]][, -which(rmv.rows>0)];print(rmv.rows);}
-  + 
+
     
 # Warum funktioniert es nicht ?? wie sonst machen ??
 # habs jtzt auf die primitive Art gemacht, für jede einzelne Zelllinie den Code wieder laufen lassen
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000304`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000304` = allDepMap_mutation_SkinCancer$`ACH-000304`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000322`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000322` = allDepMap_mutation_SkinCancer$`ACH-000322`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000322`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000322` = allDepMap_mutation_SkinCancer$`ACH-000322`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000348`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000348` = allDepMap_mutation_SkinCancer$`ACH-000348`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000401`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000401` = allDepMap_mutation_SkinCancer$`ACH-000401`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000404`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000404` = allDepMap_mutation_SkinCancer$`ACH-000404`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000425`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000425` = allDepMap_mutation_SkinCancer$`ACH-000425`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000450`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000450` = allDepMap_mutation_SkinCancer$`ACH-000450`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000458`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000458` = allDepMap_mutation_SkinCancer$`ACH-000458`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000477`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000477` = allDepMap_mutation_SkinCancer$`ACH-000477`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000550`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000550` = allDepMap_mutation_SkinCancer$`ACH-000550`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000579`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000579` = allDepMap_mutation_SkinCancer$`ACH-000579`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000580`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000580` = allDepMap_mutation_SkinCancer$`ACH-000580`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000614`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000614` = allDepMap_mutation_SkinCancer$`ACH-000614`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000632`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000632` = allDepMap_mutation_SkinCancer$`ACH-000632`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000661`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000661` = allDepMap_mutation_SkinCancer$`ACH-000661`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000765`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000665` = allDepMap_mutation_SkinCancer$`ACH-000665`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000788`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000788` = allDepMap_mutation_SkinCancer$`ACH-000788`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000799`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000799` = allDepMap_mutation_SkinCancer$`ACH-000799`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000805`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000805` = allDepMap_mutation_SkinCancer$`ACH-000805`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000810`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000810` = allDepMap_mutation_SkinCancer$`ACH-000810`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000822`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000822` = allDepMap_mutation_SkinCancer$`ACH-000822`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000827`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000827` = allDepMap_mutation_SkinCancer$`ACH-000827`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000881`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000881` = allDepMap_mutation_SkinCancer$`ACH-000881`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000882`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000882` = allDepMap_mutation_SkinCancer$`ACH-000882`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000884`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000884` = allDepMap_mutation_SkinCancer$`ACH-000884`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000915`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000915` = allDepMap_mutation_SkinCancer$`ACH-000915`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000968`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-000968` = allDepMap_mutation_SkinCancer$`ACH-000968`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-001239`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-001239` = allDepMap_mutation_SkinCancer$`ACH-001239`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-001328`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-001328` = allDepMap_mutation_SkinCancer$`ACH-001328`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-001523`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-001523` = allDepMap_mutation_SkinCancer$`ACH-001523`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-001550`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-001550` = allDepMap_mutation_SkinCancer$`ACH-001550`[, -which(rmv.rows>0)]
- rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-001552`, 2, function (x){sum(is.na(x))})
- allDepMap_mutation_SkinCancer$`ACH-001552` = allDepMap_mutation_SkinCancer$`ACH-001552`[, -which(rmv.rows>0)]
-
+ 
+#    rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000322`, 2, function (x){sum(is.na(x))})
+# allDepMap_mutation_SkinCancer$`ACH-000322` = allDepMap_mutation_SkinCancer$`ACH-000322`[, -which(rmv.rows>0)]
+ 
 # müssen alles seperat machen
-# müssen noch Spalten entfernt werden??
+# habe jtzt doch noch eine Schleife gefunden die genau das macht 
+ 
+ i = 0
+ while (i < 35) {i = i+1; rmv.rows = apply (allDepMap_mutation_SkinCancer[[i]], 2, function (x){sum(is.na(x))});
+ allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][, -which(rmv.rows>0)];}
+
+ 
+ # müssen noch Spalten entfernt werden??
+
+# alle Reihen entfernen die nicht Deleterious sind 
+ 
+ i = 0
+ while (i < 35) { i = i+1; allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][-which(allDepMap_mutation_SkinCancer[[i]][,"isDeleterious"]==FALSE), ]}
+ #funktioniert im script nich aber alleine schon
 
     
 ## Copynumber Dataframe 
@@ -170,7 +115,20 @@ sum(isTRUE(which(elif>0)))
 # als Wert wird hier 0 ausgegeben also gibt es keine NAs in diesem Dataframe
 
 
+
+
 ## Speichern der gesäuberten Daten
 
-save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
-load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
+#save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
+
+
+#load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
+
+
+# Fragen: 
+# warum bekomme ich bei der schleife eine Fehlermedlung angezeigt??
+#warum funktioniert die isDeleterious raussuchen nicht im script sondern nur alleine? 
+
+
+
+
