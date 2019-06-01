@@ -6,9 +6,50 @@
 
 # das ist unser Datensatz mit unseren Zelllinien, er ist im Github Ordner gespeicher 
 # Achung : ihr habt einen anderen Pfad als ich 
+
 load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS")
 
 ## Data Cleaning 
+
+## Mutation Dataframe 
+
+# alle Reihen entfernen die nicht Deleterious sind 
+
+a = 1
+while (a < length(names(allDepMap_mutation_SkinCancer))) { 
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]==TRUE, ]
+  a = a+1
+}
+#funktioniert im script nich aber alleine schon
+
+
+# als erstes haben wir uns die NAs pro Reihe also die Missing values pro Mutation angeschauen 
+# aber wie bei der annotation matrix sollten wir nicht schauen welche Mutationen viele Nas haben 
+# sondern welche observations in verschiedenen Mutationen missing value lifern 
+# also nicht alle NAs pro Reihe(was dann die Mutationen wären) sondern pro Observables (hier also die Spalten )
+#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 1, function (x){sum(is.na(x))})
+#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 2, function (x){sum(is.na(x))})
+
+# rmv.rows speichert nun alle spalten für die Nas auftretten 
+#allDepMap_mutation_SkinCancer$`ACH-000274` = allDepMap_mutation_SkinCancer$`ACH-000274`[, -which(rmv.rows>0)]
+# diese Spalten werden aus der Datenmatrix entfernt 
+# das ist aber nur eine zellline jtzt müssen wir es noch für alle 34 Zelllinien machen 
+
+
+
+
+i = 1
+while (i < length(names(allDepMap_mutation_SkinCancer))) {
+
+  rmv.rows = apply (allDepMap_mutation_SkinCancer[[i]], 2, function (x){sum(is.na(x))})
+  allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][, -which(rmv.rows>0)]
+  i = i+1
+}
+# R script hatte ein Problem damit das wir immer mit i = 0 angefangen haben
+# daher haben wir jtzt mit  i= 0 gemacht und das +1 in der schleife erst die Aktion ausgeführt ist positioniert
+
+# müssen noch Spalten entfernt werden??
+
 
 ## Annotation Data Matrix
 
@@ -56,44 +97,8 @@ rmv.rows = apply(allDepMap_kd.prob_SkinCancer, 1, function(x) {sum(is.na(x))})
   length(which(rmv.rows ==0 )) == length(rownames(allDepMap_kd.prob_SkinCancer))
 
   
-## Mutation Dataframe 
-
-  
-# als erstes haben wir uns die NAs pro Reihe also die Missing values pro Mutation angeschauen 
-# aber wie bei der annotation matrix sollten wir nicht schauen welche Mutationen viele Nas haben 
-# sondern welche observations in verschiedenen Mutationen missing value lifern 
-# also nicht alle NAs pro Reihe(was dann die Mutationen wären) sondern pro Observables (hier also die Spalten )
-#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 1, function (x){sum(is.na(x))})
-#rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000274`, 2, function (x){sum(is.na(x))})
-
-# rmv.rows speichert nun alle spalten für die Nas auftretten 
-#allDepMap_mutation_SkinCancer$`ACH-000274` = allDepMap_mutation_SkinCancer$`ACH-000274`[, -which(rmv.rows>0)]
-# diese Spalten werden aus der Datenmatrix entfernt 
-# das ist aber nur eine zellline jtzt müssen wir es noch für alle 34 Zelllinien machen 
 
 
-    
-# Warum funktioniert es nicht ?? wie sonst machen ??
-# habs jtzt auf die primitive Art gemacht, für jede einzelne Zelllinie den Code wieder laufen lassen
- 
-#    rmv.rows = apply (allDepMap_mutation_SkinCancer$`ACH-000322`, 2, function (x){sum(is.na(x))})
-# allDepMap_mutation_SkinCancer$`ACH-000322` = allDepMap_mutation_SkinCancer$`ACH-000322`[, -which(rmv.rows>0)]
- 
-# müssen alles seperat machen
-# habe jtzt doch noch eine Schleife gefunden die genau das macht 
- 
- i = 0
- while (i < 35) {i = i+1; rmv.rows = apply (allDepMap_mutation_SkinCancer[[i]], 2, function (x){sum(is.na(x))});
- allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][, -which(rmv.rows>0)];}
-
- 
- # müssen noch Spalten entfernt werden??
-
-# alle Reihen entfernen die nicht Deleterious sind 
- 
- i = 0
- while (i < 35) { i = i+1; allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][-which(allDepMap_mutation_SkinCancer[[i]][,"isDeleterious"]==FALSE), ]}
- #funktioniert im script nich aber alleine schon
 
     
 ## Copynumber Dataframe 
@@ -119,7 +124,7 @@ sum(isTRUE(which(elif>0)))
 
 ## Speichern der gesäuberten Daten
 
-#save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
+save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
 
 
 #load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
