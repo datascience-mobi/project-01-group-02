@@ -127,12 +127,15 @@ sum(isTRUE(which(elif>0)))
 save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
 
 
+
 #load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
 
 
 # Fragen: 
-# warum bekomme ich bei der schleife eine Fehlermedlung angezeigt??
-#warum funktioniert die isDeleterious raussuchen nicht im script sondern nur alleine? 
+# wie kann ich die mutationen die Expressionsvalues zuordnen ?? 
+# eventuell bezeichnungen in der Mutationsmatrix noch als Reihennamen benutzen
+# low variance Ideen ? also müssen wir uns noch unterhalten wie wir das mit der Varianz machen 
+# villt nur mit dem Histogramm aus den oft mutierten Genen??
 
 
 
