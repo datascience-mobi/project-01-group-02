@@ -20,7 +20,8 @@ while (a < length(names(allDepMap_mutation_SkinCancer))) {
   allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]==TRUE, ]
   a = a+1
 }
-#funktioniert im script nich aber alleine schon
+
+
 
 
 # als erstes haben wir uns die NAs pro Reihe also die Missing values pro Mutation angeschauen 
@@ -49,6 +50,56 @@ while (i < length(names(allDepMap_mutation_SkinCancer))) {
 # daher haben wir jtzt mit  i= 0 gemacht und das +1 in der schleife erst die Aktion ausgeführt ist positioniert
 
 # müssen noch Spalten entfernt werden??
+
+# die Mutationen in alphabetischer Reihenfolge
+a = 1
+while(a< 35){
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][order(allDepMap_mutation_SkinCancer[[a]][,2]), ]
+   a = a+1
+}
+
+# um die einzelnen Listen in eine Dataframe zu machen müssen wir erst checken ob sie die gleichen Spaten haben 
+a = 1
+ while (a<35) {print(length(colnames(allDepMap_mutation_SkinCancer[[a]]))); a = a+1;}
+# um zu sehen was die niedrigste Spaltenanzahl ist , die niedrigste Spalten anzahl hatt Zellinie ACH-001550
+# wie beziehen also die Spalten auf alle anderne Zelllinien und löschen den Rest raus 
+# diese Zelllinie hat den Index 33 in der Zelllinienliste
+a = 1
+while (a<35) {
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][,colnames(allDepMap_mutation_SkinCancer[[33]])]
+  a = a+1
+}
+
+
+#alles in eine Dataframe packen und dann in alphabetischer Reihenfolge angschauen
+
+mymatrix <- rbind(allDepMap_mutation_SkinCancer[[1]],allDepMap_mutation_SkinCancer[[2]])
+
+a = 3
+ while (a<35) {mymatrix <- rbind(mymatrix,allDepMap_mutation_SkinCancer[[a]])
+    a = a+1   
+ }
+
+Mutation_1dataframe <- mymatrix
+rm(mymatrix)
+
+
+# kontrolle ob die Dimmension der neuen Dataframe mit den Anzahl der Mutationnen 
+# in allen Zelllinien übereinstimmt 
+a = 1
+Reihen = 0 
+while (a<35) { 
+    Reihen = Reihen + length(rownames(allDepMap_mutation_SkinCancer[[a]]))
+    a = a+1
+}
+
+# jtzt nach alphabet ordnen damit man sieht welche Mutation die gleich sind untereinander stehen
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Chromosome),]
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Start_position),]
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Hugo_Symbol),]
 
 
 ## Annotation Data Matrix
@@ -88,6 +139,8 @@ length(which(rmv.rows ==0 )) == length(rownames(allDepMap_kd.ceres_SkinCancer))
 # Vektor aus allen Reihen welche keine Missing Values aufweisen ist genauso lange wie der Vektor aller Reihennamen 
 # also haben wir keine NAs in unserer Dataframe 
 
+allDepMap_kd.ceres_SkinCancer = allDepMap_kd.ceres_SkinCancer[order(rownames(allDepMap_kd.ceres_SkinCancer)), ]
+
 ## kd.prob Data Matrix
 
 # dasselbe wie bei der kd.ceres Dataframe 
@@ -96,6 +149,8 @@ rmv.rows = apply(allDepMap_kd.prob_SkinCancer, 1, function(x) {sum(is.na(x))})
   length(allDepMap_kd.prob_SkinCancer$`ACH-000014`) == length(rmv.rows)
   length(which(rmv.rows ==0 )) == length(rownames(allDepMap_kd.prob_SkinCancer))
 
+
+  allDepMap_kd.prob_SkinCancer = allDepMap_kd.prob_SkinCancer[order(rownames(allDepMap_kd.prob_SkinCancer)), ]
   
 
 
@@ -112,13 +167,19 @@ allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[-which(elif>0)
 # ist so fertig denke ich 
 # generell mal gedanken darüber machen ob wir niedrige Varianzen herausfiltern sollten
 
+#alphabetische Sortierung für bessere Übersicht 
+allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[order(rownames(allDepMap_copynumber_SkinCancer)), ]
+
+
 ## Expressions Dataframe
 
 elif = apply(allDepMap_expression_SkinCancer, 1, function(x) {sum(is.na(x))})
 sum(isTRUE(which(elif>0)))
 
 # als Wert wird hier 0 ausgegeben also gibt es keine NAs in diesem Dataframe
+#alphabetische Sortierung für bessere Übersicht 
 
+allDepMap_expression_SkinCancer = allDepMap_expression_SkinCancer[order(rownames(allDepMap_expression_SkinCancer)), ]
 
 
 
@@ -132,8 +193,7 @@ save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesa
 
 
 # Fragen: 
-# wie kann ich die mutationen die Expressionsvalues zuordnen ?? 
-# eventuell bezeichnungen in der Mutationsmatrix noch als Reihennamen benutzen
+
 # low variance Ideen ? also müssen wir uns noch unterhalten wie wir das mit der Varianz machen 
 # villt nur mit dem Histogramm aus den oft mutierten Genen arbeiten und da die Gene raussuchen die Wichtig sind 
 #und die Wichtigkeit nicht von der Varianzen abhängig machen

@@ -14,93 +14,24 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
 # kategorien die ich definieren kann , also was setze ich für die aesthetics ein ? 
      
 
+# der nächste Schritt wäre jtzt das erstellen eines Histogramms, welches zeigt welche Gene am öftesten mutieren 
+# wie machen wir das ? 
+# haben bisher im Clean up eine dataframe erstellt der uns alle Mutationen über alle Zelllinien wiedergibt 
+     # also Gene die gleich heisen stehen direkt untereinander 
+# das sind aber echt nicht viele die genau gleich sind ? 
+# sollen wir also wirklich nur alle die genau gleich heißen als eine Mutation im Gen zusammenfassen oder heißen 
+# villt Mutaitonen anderster obwohl sie im selben Gen liegen? wie sehen wir das dann weil wir haben zwar 
+# die Startposition und endposition von den Mutationen aber ja nicht von den Genen
+# oder gibt es einfach so viel Passenger mutations das wir uns dann einfach nur auf die nicht uniquen Genemutationen konzentrieren sollen ??
+     
+         
+length(unique(Mutation_1dataframe$Hugo_Symbol))
 
-
-
-
-
-
-
-
-
-which(allDepMap_mutation_SkinCancer$`ACH-000014`[,2]=="AL627309.1")
-
-elif = names(allDepMap_mutation_SkinCancer)
-
-
-
-
-
-#gibt mir aus in welchen Zelllines es an welchen Positionen genau diese Mutation gibt
-i = 0
-while(i<35){i = i +1; print(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== "SHROOM2"));}
-
-# gibt mir an in welcher Anzahl diese mutation auftritt in allen Zelllinien
-while(i<length(elif)+1){i = i +1; print(length(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== "SHROOM2")));}
-
-# gibt mir an in welcher Anzahl bestimmte Mutationen in einer Zelllinie auftreten
-a = rownames(allDepMap_expression_SkinCancer)
-while(i<length(a)+1){i = i +1; print(length(which(allDepMap_mutation_SkinCancer$`ACH-000274`$Hugo_Symbol== a[i])));}
-
-#ich brauche jtzt also als erstes einen Vektor a der wirklich alle möglichen Mutationen enthält 
-#als a werde ich die aufgelisteten Mutationen aus der Expressionsmatrix nehmen
-
-
-#wenn ich das dan habe werde ich die 2. Schleif als äußere Schleife benutzen und die 1. als innere
-#dadurch kann ich mir Reihe pro Reihe eine neue Dataframe erstellen welche mir wiedergibt wie 
-#viele Mutationen eine bestimmten Gens in jeder Celllinie vorliegt 
-# die Zelllinien werden die Spalten sein 
-# und die Reihen die Mutationen 
-#aber 
-
-# die namen der Celllinien hat eig die gleiche auswirkung wie Vektor c(1:34)
-
-
-
-# Namen aller Gene welche auch in unsere Expressionsmatrix eine Rolle spielen 
-
-
-
-#while(b< length(a)+1){b = b+1; i = 0;  while(i<length(elif)+1){i = i +1; print(length(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== a[b])));}}
-
-# mir wird hier allerdings deutlich zu wenig ausgegeben
-# war ein fehler von mir da ich das i nicht jedes mal wieder auf 0 gesetzt habe sondern nur einmal auserhalb 
-# while schleife und dann nichtmehr daher ist die innere Schleife nur genau einmal abgelaufen weil i schon zu anfang nicht mehr <34 war
-
-a = rownames(allDepMap_expression_SkinCancer)
-elif = names(allDepMap_mutation_SkinCancer)
-i = 1
-b = 1
-Anzahlmutation <- c()
-
-while(b< length(a)){
-    i = 1
-    Spalte <- c()
-    while(i<length(elif)){
-        Spalte[i] <- length(which(allDepMap_mutation_SkinCancer[[elif[i]]][ ,2]== a[b]))
-        i = i +1
-        }
-    Anzahlmutation[b] <- Spalte
-    b = b+1
-    }
-
-# villt stimmen die Reihennamen der Expressionsmatrix einfach nicht mit denen der mutationsmatrix überein 
-#wie soll ich sie sonst raussuchen, wir wollen ja nämlich ein Histogramm erstellen die uns die Anzahl de Mutationen
-#von ienem bestimmten gen über alles Zelllinien anzeigen 
-# villt mit der Annotations spalte ??
-
-# im obigen Text wurde von uns versucht durch die einzelnen dataframes jeder einzelnen Zelllinie zu gehen und von jedem einzelnen Gen 
-# rauszusuchen wie oft es mutiert ist 
-# also schleife in einer schleife innere schleife geht mit einem bestimmten gen durch alle Zelllinien und gibt die Anzahl der Mutataionen wieder 
-# dies soll in einem vektor gespeichert werden  
-# in der äußeren schleife soll dann dieser Vektor zu einem dataframe ergänzt werden und durch alle Gennamen gegangen werden das bei jedem 
-#durchlauf der inneren schleife nach einem anderen Gen gesucht wird 
-# Problem ist hierbei das wir ja keine Liste aller mutierter Gene haben wie erstellen wir eine solche List ? 
-# denken wir villt viel zu kompliziert? gibt es einen einfacherern WEg das Histogramm darzustellen?
 
 # im Grunde sind unsere Hauptfragen:
 # wie nutze ich ggplot 
 # wie können wir die mutationmatrix so auslesen das wir nur die anzahl der Mutationen über alle Zelllinien bekommen 
 # wie ziehen wir eine verbindung zwischen den Bezeichungen der Mutationen und den Namen der Gene in der Expressionsmatrix für die Arbeit nach der Visualisierung ? 
-
+# ist die Säuberung so okee es wurden halt für alle Zelllinien die Annotations beispielsweise gelöscht 
+# zum erstellen der großen Matrix da einige Zelllinien diese nicht hatten
 
