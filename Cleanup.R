@@ -135,7 +135,8 @@ save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesa
 # wie kann ich die mutationen die Expressionsvalues zuordnen ?? 
 # eventuell bezeichnungen in der Mutationsmatrix noch als Reihennamen benutzen
 # low variance Ideen ? also müssen wir uns noch unterhalten wie wir das mit der Varianz machen 
-# villt nur mit dem Histogramm aus den oft mutierten Genen??
+# villt nur mit dem Histogramm aus den oft mutierten Genen arbeiten und da die Gene raussuchen die Wichtig sind 
+#und die Wichtigkeit nicht von der Varianzen abhängig machen
 
 
 

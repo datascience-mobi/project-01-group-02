@@ -9,6 +9,10 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
      geom_smooth(mapping = aes(x = colnames, y = rownames(allDepMap_expression_SkinCancer[1:4, ]),  group = rownames(allDepMap_expression_SkinCancer[1:4, ]) )
                    )
 #wie mache ich das hier es gibt nich so schöne kategorien wie bei dem Beispiel also wie benenne ich mien x und y ???
+# waren ein wenig ratlos wie genau man das ggplot paket benutzt
+# klar mit den beispielen aus dem R for datascience funktioniert das alles wunderbar aber wir haben hier ja nicht so 
+# kategorien die ich definieren kann , also was setze ich für die aesthetics ein ? 
+     
 
 
 
@@ -81,13 +85,22 @@ while(b< length(a)){
     }
 
 # villt stimmen die Reihennamen der Expressionsmatrix einfach nicht mit denen der mutationsmatrix überein 
-#wie soll ich sie sonst raussuchen ?? 
+#wie soll ich sie sonst raussuchen, wir wollen ja nämlich ein Histogramm erstellen die uns die Anzahl de Mutationen
+#von ienem bestimmten gen über alles Zelllinien anzeigen 
 # villt mit der Annotations spalte ??
 
-# Spalte: in dieem Vektor werden die Gene gespeicert die innerhalb einer Zelllinie mutiert sind 
-# warum wird mir keine Matrix erstellt ? 
+# im obigen Text wurde von uns versucht durch die einzelnen dataframes jeder einzelnen Zelllinie zu gehen und von jedem einzelnen Gen 
+# rauszusuchen wie oft es mutiert ist 
+# also schleife in einer schleife innere schleife geht mit einem bestimmten gen durch alle Zelllinien und gibt die Anzahl der Mutataionen wieder 
+# dies soll in einem vektor gespeichert werden  
+# in der äußeren schleife soll dann dieser Vektor zu einem dataframe ergänzt werden und durch alle Gennamen gegangen werden das bei jedem 
+#durchlauf der inneren schleife nach einem anderen Gen gesucht wird 
+# Problem ist hierbei das wir ja keine Liste aller mutierter Gene haben wie erstellen wir eine solche List ? 
+# denken wir villt viel zu kompliziert? gibt es einen einfacherern WEg das Histogramm darzustellen?
 
-
-
+# im Grunde sind unsere Hauptfragen:
+# wie nutze ich ggplot 
+# wie können wir die mutationmatrix so auslesen das wir nur die anzahl der Mutationen über alle Zelllinien bekommen 
+# wie ziehen wir eine verbindung zwischen den Bezeichungen der Mutationen und den Namen der Gene in der Expressionsmatrix für die Arbeit nach der Visualisierung ? 
 
 
