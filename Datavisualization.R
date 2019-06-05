@@ -35,3 +35,5 @@ length(unique(Mutation_1dataframe$Hugo_Symbol))
 # ist die Säuberung so okee es wurden halt für alle Zelllinien die Annotations beispielsweise gelöscht 
 # zum erstellen der großen Matrix da einige Zelllinien diese nicht hatten
 
+# melt funktion bei ggplot 
+# hight 
