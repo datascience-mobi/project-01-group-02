@@ -35,5 +35,13 @@ length(unique(Mutation_1dataframe$Hugo_Symbol))
 # ist die Säuberung so okee es wurden halt für alle Zelllinien die Annotations beispielsweise gelöscht 
 # zum erstellen der großen Matrix da einige Zelllinien diese nicht hatten
 
-# melt funktion bei ggplot 
-# hight 
+# Besprechung mit David: 
+# alle Hugo name in einen Vektor 
+# mit Funktion count, unique und sapply neue Matrix erstellen mit den Counts von jedem einzelnen Gen
+# Beispiel für apply family ist in der Gruppe 
+# clean up ist eig nicht nötig aber können es auch so lassen
+# nachdem mit den Counts die gene ausgesucht wurden die wichtig sind neue Expression matrix
+# extra matrix mit den Gene die viel mutieren und den genen die nie mutiert sind(die die in der ungesäurberten Mutationsmatrix nicht auftauchen)
+# mit melt funktion daten bearbeiten die mit ggplot dargestellt werden sollen 
+# für SDL k-means clustering
+# die packeges für regressionsanalyse etc erfragen 
