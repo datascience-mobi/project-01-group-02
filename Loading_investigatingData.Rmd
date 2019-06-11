@@ -104,10 +104,6 @@ namescelllines = allDepMapData$annotation$DepMap_ID[which(allDepMapData$annotati
 ```
 
 
-```{r}
-allDepMap_Expression_SkinCancer =  allDepMapData$expression[ ,which(colnames(allDepMapData$expression) %in% namescelllines)]
-```
-
 ## Daten mit denen wir arbeiten werden 
 ```{r, eval=FALSE}
 namescelllines = allDepMapData$annotation$DepMap_ID[which(allDepMapData$annotation$Primary.Disease == 'Skin Cancer')]

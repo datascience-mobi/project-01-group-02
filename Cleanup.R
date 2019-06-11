@@ -146,6 +146,7 @@ allDepMap_kd.ceres_SkinCancer = allDepMap_kd.ceres_SkinCancer[order(rownames(all
 # dasselbe wie bei der kd.ceres Dataframe 
 # also keine Missing values 
 rmv.rows = apply(allDepMap_kd.prob_SkinCancer, 1, function(x) {sum(is.na(x))})
+
   length(allDepMap_kd.prob_SkinCancer$`ACH-000014`) == length(rmv.rows)
   length(which(rmv.rows ==0 )) == length(rownames(allDepMap_kd.prob_SkinCancer))
 
