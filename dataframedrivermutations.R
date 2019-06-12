@@ -22,9 +22,18 @@ dim(countingMutations)
 rownames(countingMutations)
 rownames(countingMutations) <- c(1:3526)
 
-b<-countingMutations[3520:3526,]
+colnames(countingMutations) <- c("Mutations", "Occupancy")
 
-ggplot(data = b) +
-  geom_bar(mapping = aes(x = Var1, y = value), stat = "identity")
+
+countingMutations$Mutations <- factor(countingMutations$Mutations, levels = countingMutations$Mutations)
+
+ggplot(data = countingMutations)+
+  (geom_bar(mapping = aes(x = Mutations, y = Occupancy), stat = "identity"))
+
+b <- countingMutations[3500:3526,]
+b$Var1 <- factor(b$Mutations, levels = b$Mutations)
+
+ggplot(data = b)+
+  (geom_bar(mapping = aes(x = Mutations, y = Occupancy), stat = "identity"))
 
 
