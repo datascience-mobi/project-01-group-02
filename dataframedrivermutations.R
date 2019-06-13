@@ -37,3 +37,7 @@ ggplot(data = b)+
   (geom_bar(mapping = aes(x = Mutations, y = Occupancy), stat = "identity"))
 
 
+Targetmutations <- countingMutations
+
+
+
