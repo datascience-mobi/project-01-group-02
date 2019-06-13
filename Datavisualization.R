@@ -39,7 +39,8 @@ boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines"
      which(rownames(allDepMap_expression_SkinCancer) == "RARS")
      which(rownames(allDepMap_expression_SkinCancer) == "RASSF9")
      #um die Zeilen, in denen die RAS Gene sind zu identifizieren, war dan von 27136 bis 27181
-     RASexpression <- c(27136:27181)
+     RASexpression <- allDepMap_expression_SkinCancer[27136:27181,]
+     
      #habe dann alles als RASexpression zusammengefasst und Boxplot zeigen lasssen
      boxplot(RASexpression)
      #für NF1 der gleiche Ablauf
