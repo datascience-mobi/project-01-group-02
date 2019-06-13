@@ -5,9 +5,7 @@
 boxplot(allDepMap_expression_SkinCancer$`ACH-000014`, main = "ACH-000014", xlab = "Expressionvalue", horizontal = T)
 boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines", ylab = "values")
 
-ggplot(data = allDepMap_expression_SkinCancer[1:4, ])  
-     geom_smooth(mapping = aes(x = colnames, y = rownames(allDepMap_expression_SkinCancer[1:4, ]),  group = rownames(allDepMap_expression_SkinCancer[1:4, ]) )
-                   )
+                  )
 
      
 
@@ -33,7 +31,7 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
      #für BRAF
      which(rownames(allDepMap_expression_SkinCancer) == "BRAF")
      #um herauszufinden in welchen Zelllinien BRAF exprimiert wird, [1] 10195 das kommt dabei raus 
-     BRAFexpression <- allDepMap_expression_SkinCancer[10195,]
+     BRAFexpression <- allDepMap_expression_SkinCancer[which(rownames(allDepMap_expression_SkinCancer) == "BRAF"),]
      #alle Zeilen mit BRAF habe ich dann BRAFexpression genannt
      boxplot(BRAFexpression)
      #Boxplot zu BRAF
@@ -53,7 +51,7 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
      #Last but not least: WT 
      which(rownames(allDepMap_expression_SkinCancer) == "WT1")
      which(rownames(allDepMap_expression_SkinCancer) == "WTIP")
-     WTexpression <- allDepMap_expression_SkinCancer[47802:47806]
+     WTexpression <- allDepMap_expression_SkinCancer[47802:47806,]
      boxplot(WTexpression)
      #Nun haben wir alle unsere Infos einzelt extrahiert, zum zusammenfügen hab ich dann diesen Code benutzt:
      rbind(BRAFexpression, RASexpression, NF1expression, WTexpression)
@@ -62,4 +60,6 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
      # dann hab ich noch einen wunderschönen Boxplot aus den Daten erstellt 
      boxplot(Drivermutation.expr)
      #das wars mic-drop :)
+     
+     # 
      
