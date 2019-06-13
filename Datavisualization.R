@@ -81,6 +81,9 @@ boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines"
      #so we see the expression of all genes in the celllines
      barplot(as.matrix(Drivermutation.expr[-1,-1]))
      
+     #boxplot over the same data 
+     boxplot(as.matrix(df2[-1, -1]))
+     
      #We want to have the genes in the x-axis so i created a new matrix with the rows and columns of the drivermutation.expr swapped
      df2 <- data.frame(t(Drivermutation.expr[-2, -2]))
      
