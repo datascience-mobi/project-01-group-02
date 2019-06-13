@@ -19,10 +19,47 @@ ggplot(data = allDepMap_expression_SkinCancer[1:4, ])
 # Besprechung mit David: 
 # alle Hugo name in einen Vektor 
 # mit Funktion count, unique und sapply neue Matrix erstellen mit den Counts von jedem einzelnen Gen
-# Beispiel für apply family ist in der Gruppe 
-# clean up ist eig nicht nötig aber können es auch so lassen
+# Beispiel f?r apply family ist in der Gruppe 
+# clean up ist eig nicht n?tig aber k?nnen es auch so lassen
 # nachdem mit den Counts die gene ausgesucht wurden die wichtig sind neue Expression matrix
-# extra matrix mit den Gene die viel mutieren und den genen die nie mutiert sind(die die in der ungesäurberten Mutationsmatrix nicht auftauchen)
+# extra matrix mit den Gene die viel mutieren und den genen die nie mutiert sind(die die in der unges?urberten Mutationsmatrix nicht auftauchen)
 # mit melt funktion daten bearbeiten die mit ggplot dargestellt werden sollen 
-# für SDL k-means clustering
-# die packeges für regressionsanalyse etc erfragen 
+# f?r SDL k-means clustering
+# die packeges f?r regressionsanalyse etc erfragen 
+     
+     #erstellen der Matrizen mit den Driver Mutations (BRAF, NFI, WT, RAS) aus der Expression Daten
+     #Davor erstmal alphabetisch Ordnen der rows 
+     allDepMap_expression_SkinCancer = allDepMap_expression_SkinCancer[order(rownames(allDepMap_expression_SkinCancer)),]
+     #fÃ¼r BRAF
+     which(rownames(allDepMap_expression_SkinCancer) == "BRAF")
+     #um herauszufinden in welchen Zelllinien BRAF exprimiert wird, [1] 10195 das kommt dabei raus 
+     BRAFexpression <- allDepMap_expression_SkinCancer[10195,]
+     #alle Zeilen mit BRAF habe ich dann BRAFexpression genannt
+     boxplot(BRAFexpression)
+     #Boxplot zu BRAF
+     #Als nÃ¤chstes RAS, habe erstmal in der Liste geschaut welche KÃ¼rzel zu RAS passen wÃ¼rden, denn wenn man nur nach RAS kommt nichts raus 
+     which(rownames(allDepMap_expression_SkinCancer) == "RARS")
+     which(rownames(allDepMap_expression_SkinCancer) == "RASSF9")
+     #um die Zeilen, in denen die RAS Gene sind zu identifizieren, war dan von 27136 bis 27181
+     RASexpression <- c(27136:27181)
+     #habe dann alles als RASexpression zusammengefasst und Boxplot zeigen lasssen
+     boxplot(RASexpression)
+     #fÃ¼r NF1 der gleiche Ablauf
+     which(rownames(allDepMap_expression_SkinCancer) == "NF1")
+     which(rownames(allDepMap_expression_SkinCancer) == "NF1P8")
+     NF1expression <- allDepMap_expression_SkinCancer[22721:22729,]
+     #NF1expression mit allen NF1 vorhanden
+     boxplot(NF1expression)
+     #Last but not least: WT 
+     which(rownames(allDepMap_expression_SkinCancer) == "WT1")
+     which(rownames(allDepMap_expression_SkinCancer) == "WTIP")
+     WTexpression <- allDepMap_expression_SkinCancer[47802:47806]
+     boxplot(WTexpression)
+     #Nun haben wir alle unsere Infos einzelt extrahiert, zum zusammenfÃ¼gen hab ich dann diesen Code benutzt:
+     rbind(BRAFexpression, RASexpression, NF1expression, WTexpression)
+     #Das Neue habe ich dann als Drivermutation.expr umbenannt
+     Drivermutation.expr <- rbind(BRAFexpression, RASexpression, NF1expression, WTexpression)
+     # dann hab ich noch einen wunderschÃ¶nen Boxplot aus den Daten erstellt 
+     boxplot(Drivermutation.expr)
+     #das wars mic-drop :)
+     
