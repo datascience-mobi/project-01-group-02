@@ -80,10 +80,7 @@ boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines"
      # first barplot has the cellines in the x-axis and the expression of all mutations in the y-axis 
      #so we see the expression of all genes in the celllines
      barplot(as.matrix(Drivermutation.expr[-1,-1]))
-     
-     #boxplot over the same data 
-     boxplot(as.matrix(df2[-1, -1]))
-     
+    
      #We want to have the genes in the x-axis so i created a new matrix with the rows and columns of the drivermutation.expr swapped
      df2 <- data.frame(t(Drivermutation.expr[-2, -2]))
      
@@ -91,5 +88,8 @@ boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines"
      #the genes are the x-axis and the expression is the y-axis over all celllines
      #the lines in the bars are the celllines -> so we can see in which celline how much of this gene is expressed
      barplot(as.matrix(df2[-1,-1]))
+     
+     #boxplot over the same data 
+     boxplot(as.matrix(df2[-1, -1]))
      
      
