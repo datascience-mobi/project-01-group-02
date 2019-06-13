@@ -62,5 +62,15 @@ boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines"
      boxplot(Drivermutation.expr)
      #das wars mic-drop :)
      
-     # 
+     #RASexpression varianz
+     RASexpression1 = apply(RASexpression, 1, function(x){var(x)})
+     RASexpression1
+     hist(RASexpression1)
+     #NF1expression varianz
+     NF1expression1 = apply(NF1expression, 1, function(x){var(x)})
+     hist(NF1expression1)
+     #WTexpression varianz
+     WTexpression1 = apply(WTexpression, 1,function(x){var(x)})
+     hist(WTexpression1)
+     
      
