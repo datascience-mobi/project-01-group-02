@@ -1,0 +1,149 @@
+---
+title: "Project 2 - skin cancer"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+loading our data 
+
+
+
+Data Clean up 
+
+namecelllines was defined as all the celllines with skin cancer as their primary disease
+```{r}
+namescelllines = allDepMapData$annotation$DepMap_ID[which(allDepMapData$annotation$Primary.Disease == 'Skin Cancer')]
+```
+
+Extraction of the skin cancer cell lines out of all the matrices
+```{r}
+allDepMap_expression_SkinCancer =  allDepMapData$expression[ ,which(colnames(allDepMapData$expression) %in% namescelllines)]
+allDepMap_mutation_SkinCancer =  allDepMapData$mutation[match(x = namescelllines, table = names(allDepMapData$mutation))]
+allDepMap_copynumber_SkinCancer =  allDepMapData$copynumber[ ,which(colnames(allDepMapData$copynumber) %in% namescelllines)]
+allDepMap_kd.ceres_SkinCancer =  allDepMapData$kd.ceres[ ,which(colnames(allDepMapData$kd.ceres) %in% namescelllines)]
+allDepMap_kd.prob_SkinCancer =  allDepMapData$kd.prob[ ,which(colnames(allDepMapData$kd.prob) %in% namescelllines)]
+allDepMap_annotation_SkinCancer =  allDepMapData$annotation[which(allDepMapData$annotation$DepMap_ID %in% namescelllines), ]
+```
+
+```{r}
+a = 1
+while (a < length(names(allDepMap_mutation_SkinCancer))) { 
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]==TRUE, ]
+  a = a+1
+}
+```
+
+deleting missing values out of the mutation matrix
+```{r}
+i = 1
+while (i < length(names(allDepMap_mutation_SkinCancer))) {
+  
+  rmv.rows = apply (allDepMap_mutation_SkinCancer[[i]], 2, function (x){sum(is.na(x))})
+  allDepMap_mutation_SkinCancer[[i]] = allDepMap_mutation_SkinCancer[[i]][, -which(rmv.rows>0)]
+  i = i+1
+}
+```
+
+
+```{r}
+a = 1
+while(a< 35){
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][order(allDepMap_mutation_SkinCancer[[a]][,2]), ]
+  a = a+1
+}
+
+a = 1
+while (a<35) {print(length(colnames(allDepMap_mutation_SkinCancer[[a]]))); a = a+1;}
+
+a = 1
+while (a<35) {
+  allDepMap_mutation_SkinCancer[[a]] = allDepMap_mutation_SkinCancer[[a]][,colnames(allDepMap_mutation_SkinCancer[[33]])]
+  a = a+1
+}
+
+mymatrix <- rbind(allDepMap_mutation_SkinCancer[[1]],allDepMap_mutation_SkinCancer[[2]])
+
+a = 3
+while (a<35) {mymatrix <- rbind(mymatrix,allDepMap_mutation_SkinCancer[[a]])
+a = a+1   
+}
+
+Mutation_1dataframe <- mymatrix
+rm(mymatrix)
+
+length(unique(Mutation_1dataframe$Hugo_Symbol))
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Chromosome),]
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Start_position),]
+
+Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Hugo_Symbol),]
+```
+
+ordering the rows after the rownames alphabetically of the copynumber and the expression matrix 
+```{r}
+allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[order(rownames(allDepMap_copynumber_SkinCancer)),]
+allDepMap_expression_SkinCancer = allDepMap_expression_SkinCancer[order(rownames(allDepMap_expression_SkinCancer)),]
+```
+
+defining the rownames of the annotation matrix as the ID -> the celllines
+```{r}
+rownames(allDepMap_annotation_SkinCancer)= allDepMap_annotation_SkinCancer$DepMap_ID
+```
+
+deleting the columns with the names ID, Aliases, Gender, Source
+```{r}
+allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[ , -which(colnames(allDepMap_annotation_SkinCancer) %in% c("DepMap_ID", "Aliases", "Gender", "Source")) ]
+```
+
+which Cellines don't have the subtype disease melanoma?
+```{r}
+which(allDepMap_annotation_SkinCancer$Subtype.Disease != "Melanoma")
+```
+
+reorder the rows of the annotation matrix to gruop the cellines after the subtype diseases
+```{r}
+allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[c(1:13, 15:19, 21:26, 28:30, which(allDepMap_annotation_SkinCancer$Subtype.Disease != "Melanoma")), ]
+allDepMap_annotation_SkinCancer$Subtype.Disease = factor(allDepMap_annotation_SkinCancer$Subtype.Disease)
+allDepMap_annotation_SkinCancer$Primary.Disease = factor(allDepMap_annotation_SkinCancer$Primary.Disease)
+```
+
+looking for missing values in the ceres and the probability matrix -> there are none, then ordering the rows alphabetically after the rownames which equal the gene names
+```{r}
+rmv.rows = apply(allDepMap_kd.ceres_SkinCancer, 1, function(x) {sum(is.na(x))})
+allDepMap_kd.ceres_SkinCancer = allDepMap_kd.ceres_SkinCancer[order(rownames(allDepMap_kd.ceres_SkinCancer)), ]
+
+rmv.rows = apply(allDepMap_kd.prob_SkinCancer, 1, function(x) {sum(is.na(x))})
+allDepMap_kd.prob_SkinCancer = allDepMap_kd.prob_SkinCancer[order(rownames(allDepMap_kd.prob_SkinCancer)), ]
+```
+
+cleaning the copynumber matrix -> deleting all rows which contain missing values
+```{r}
+rmv.rows = apply(allDepMap_copynumber_SkinCancer, 1, function(x) {sum(is.na(x))})
+which(rmv.rows > 0)
+allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[-which(rmv.rows > 0), ]
+allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[order(rownames(allDepMap_copynumber_SkinCancer)), ]
+```
+
+
+Cleaning the expression matrix -> no missing values 
+```{r}
+mis.val = apply(allDepMap_expression_SkinCancer, 1, function(x) {sum(is.na(x))})
+
+mis.val [1:10]
+
+which(mis.val > 0)
+```
+
+
+Data visualization 
+
+boxplts from the expression matrix the first one is only of the first cellline and the second plot is of all celllines
+```{r}
+boxplot(allDepMap_expression_SkinCancer$`ACH-000014`, main = "ACH-000014", xlab = "Expressionvalue", horizontal = T)
+boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines", ylab = "values")
+```
+
