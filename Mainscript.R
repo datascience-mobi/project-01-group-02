@@ -18,7 +18,7 @@ allDepMap_annotation_SkinCancer =  allDepMapData$annotation[which(allDepMapData$
 save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS", list="allDepMap_annotation_SkinCancer", "allDepMap_copynumber_SkinCancer", "allDepMap_expression_SkinCancer", "allDepMap_kd.ceres_SkinCancer", "allDepMap_kd.prob_SkinCancer", "allDepMap_mutation_SkinCancer")
 load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS")
 rm(allDepMapData)
-      
+
 
 a = 1
 while (a < length(names(allDepMap_mutation_SkinCancer))) { 
@@ -66,6 +66,35 @@ Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Chromosome),
 Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Start_position),]
 
 Mutation_1dataframe = Mutation_1dataframe[order(Mutation_1dataframe$Hugo_Symbol),]
+
+Mutation_1dataframe = Mutation_1dataframe[-which(Mutation_1dataframe$isDeleterious == FALSE),]
+
+# wir wollen jtzt die gleichen Gene in eine Bezeichung zusammenfassen damit 
+# sich damit besser arbeiten lässt
+
+Mutation_1dataframe <- cbind(Mutation_1dataframe,Mutation_1dataframe$Hugo_Symbol)
+Mutation_1dataframe <- Mutation_1dataframe[, c(1,2,17,3,4,5,6,7,8,9,10,11,12,13,14,15,16)]
+colnames(Mutation_1dataframe)[3] <- "Hugo_Symbols2"
+
+#Mutation_1dataframe[grep('^ABCA.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F),3] = "ABCA"
+
+grep('^WT.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F)
+Mutation_1dataframe[grep("^WT.*", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "WT"
+
+grep('^RAS.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F)
+Mutation_1dataframe[grep("^RAS.*", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "RAS"
+
+grep('^RB.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F)
+Mutation_1dataframe[grep("^RB.*", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "RB"
+
+grep('^NF.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F)
+Mutation_1dataframe[grep("^NF.*", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "NF"
+
+grep('^BRAF.*', as.vector(Mutation_1dataframe$Hugo_Symbol), value = F)
+Mutation_1dataframe[grep("^BRAF.*", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "BRAF"
+
+
+#Mutation_1dataframe[grep("^[A-Za-z-0-9_]+(\@)?$", as.vector(Mutation_1dataframe$Hugo_Symbol)),"Hugo_Symbol"] <- "ABCA"
 
 allDepMap_copynumber_SkinCancer = allDepMap_copynumber_SkinCancer[order(rownames(allDepMap_copynumber_SkinCancer)),]
 allDepMap_expression_SkinCancer = allDepMap_expression_SkinCancer[order(rownames(allDepMap_expression_SkinCancer)),]
