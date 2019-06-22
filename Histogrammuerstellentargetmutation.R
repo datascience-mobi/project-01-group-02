@@ -47,26 +47,30 @@ ggplot(data = targetmutations)+
 # extrahieren der Daten für die meistmutierten Gene und speichern in extra datenset 
 
 
-namestargetmutations <- targetmutations$Mutations 
+namesdrivermutations <- targetmutations$Mutations 
 
 
-#targetexpression <- allDepMap_expression_SkinCancer[grep("^RAS.*", as.vector(rownames(allDepMap_expression_SkinCancer))),]
-targetexpression <- allDepMap_expression_SkinCancer[grep("^RB.*", as.vector(rownames(allDepMap_expression_SkinCancer))),]
-targetexpression <- rbind(targetexpression,allDepMap_expression_SkinCancer[grep("^NF.*", as.vector(rownames(allDepMap_expression_SkinCancer))),])
-targetexpression <- rbind(targetexpression, allDepMap_expression_SkinCancer[which(rownames(allDepMap_expression_SkinCancer)%in% namestargetmutations),])
+#driverexpression <- allDepMap_expression_SkinCancer[grep("^RAS.*", as.vector(rownames(allDepMap_expression_SkinCancer))),]
+driverexpression <- allDepMap_expression_SkinCancer[grep("^RB.*", as.vector(rownames(allDepMap_expression_SkinCancer))),]
+driverexpression <- rbind(driverexpression,allDepMap_expression_SkinCancer[grep("^NF.*", as.vector(rownames(allDepMap_expression_SkinCancer))),])
+driverexpression <- rbind(driverexpression, allDepMap_expression_SkinCancer[which(rownames(allDepMap_expression_SkinCancer)%in% namesdrivermutations),])
 
-namestargetmutations <- rownames(targetexpression)
+driverkd.ceres <- allDepMap_kd.ceres_SkinCancer[grep("^RAS.*", as.vector(rownames(allDepMap_kd.ceres_SkinCancer))),]
+driverkd.ceres <- rbind(driverkd.ceres, allDepMap_kd.ceres_SkinCancer[grep("^RB.*", as.vector(rownames(allDepMap_kd.ceres_SkinCancer))),])
+driverkd.ceres <- rbind(driverkd.ceres,allDepMap_kd.ceres_SkinCancer[grep("^NF.*", as.vector(rownames(allDepMap_kd.ceres_SkinCancer))),])
+driverkd.ceres <- rbind(driverkd.ceres, allDepMap_kd.ceres_SkinCancer[which(rownames(allDepMap_kd.ceres_SkinCancer)%in% namesdrivermutations),])
 
-targetcopynumber <- allDepMap_copynumber_SkinCancer[which(rownames(allDepMap_copynumber_SkinCancer)%in% namestargetmutations),]
-targetkd.ceres <- allDepMap_kd.ceres_SkinCancer[which(rownames(allDepMap_kd.ceres_SkinCancer)%in% namestargetmutations),]
-targetkd.prob <- allDepMap_kd.prob_SkinCancer[which(rownames(allDepMap_kd.prob_SkinCancer)%in% namestargetmutations),]
+namesdrivermutations <- rownames(driverexpression)
+
+drivercopynumber <- allDepMap_copynumber_SkinCancer[which(rownames(allDepMap_copynumber_SkinCancer)%in% namesdrivermutations),]
+driverkd.prob <- allDepMap_kd.prob_SkinCancer[which(rownames(allDepMap_kd.prob_SkinCancer)%in% namesdrivermutations),]
 
 
-# notargets <- countingMutations$Mutations[which(countingMutations$Occupancy < 7)]
+# nodrivers <- countingMutations$Mutations[which(countingMutations$Occupancy < 7)]
 
-# targetexpression2 <- allDepMap_expression_SkinCancer[-which(rownames(allDepMap_expression_SkinCancer) %in% notargets),]
+# driverexpression2 <- allDepMap_expression_SkinCancer[-which(rownames(allDepMap_expression_SkinCancer) %in% nodrivers),]
 
 
-save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/targetdata.RDS", list="countingMutations", "targetexpression", "targetcopynumber", "namestargetmutations", "targetkd.ceres", "targetkd.prob","Mutation_1dataframe")
-load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/targetdata.RDS")
+save(file= "C:/Users/LeoTh/Documents/GitHub/project-01-group-02/driverdata.RDS", list="countingMutations", "driverexpression", "drivercopynumber", "namesdrivermutations", "driverkd.ceres", "driverkd.prob","Mutation_1dataframe")
+load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/driverdata.RDS")
 
