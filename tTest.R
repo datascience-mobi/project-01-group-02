@@ -8,7 +8,8 @@ ttestgenes <- rownames(driverkd.ceres)
 length(ttestgenes)
 rm(countingMutations,drivercopynumber, driverexpression, driverkd.ceres, driverkd.prob, namesdrivermutations, Mutation_1dataframe)
 # wir brauen das komplette ceres dataframe: 
-load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS")
+#load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS")
+load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLinesafterCleanup.RDS")
 rm(allDepMap_annotation_SkinCancer, allDepMap_copynumber_SkinCancer, allDepMap_expression_SkinCancer, allDepMap_kd.prob_SkinCancer, allDepMap_mutation_SkinCancer)
 
 # Frage: weichen die Mittelwerte der Überlebenswerte von den Genen seknifikant voneinander ab
