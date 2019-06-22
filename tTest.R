@@ -50,7 +50,8 @@ for (i in c(1:length(ttestdata))) {
   names(ttestdata[[i]]) <- rownames(allDepMap_kd.ceres_SkinCancer)
 }
 
-# hier werden die t Werte dann geordnet 
+# der nächste Schritt wäre nun die t Werte so zu ordnen das wir die wo am meisten von 0 
+# abweichen rauszeihen können
 # damit wir später sagen können welche Werte signifikant von unserer H0 Hypthese abweichen 
 
 
@@ -69,6 +70,7 @@ load("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/ttestdataframe.RDS")
 # voneinander abweichen? oder müssen wir die Genen betrachten für welche die H0 Hypothese 
 # zutrifft ? weil das Zellwachstum bei den beiden beiden Genen in gleicher weise voneinander abweicht
 # oder müssen wir mit der Korrelation arbeiten ? 
+# ist der Ansatz so wie wir Ihn gewählt haben so überhaupt richtig ? 
 
 
 
