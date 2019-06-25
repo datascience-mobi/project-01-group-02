@@ -147,3 +147,225 @@ boxplot(allDepMap_expression_SkinCancer$`ACH-000014`, main = "ACH-000014", xlab 
 boxplot(allDepMap_expression_SkinCancer , main = "overview", xlab= "cell  lines", ylab = "values")
 ```
 
+Creating a heatmap of the ceres matrix. The computer was a bit overcharged with the whole matrix so we created a smaller matrix and created a heatmap from it. THe same we did for the porbability matrix.
+```{r}
+matrix.klein = allDepMap_kd.ceres_SkinCancer [1:20, 1:34]
+heatmap(as.matrix(matrix.klein))
+matrix.kleinprob = allDepMap_kd.prob_SkinCancer [1:20, 1:34]
+heatmap(as.matrix(matrix.kleinprob))
+```
+
+orderning the rownames of the expression marix alphabetically
+```{r}
+allDepMap_expression_SkinCancer = allDepMap_expression_SkinCancer[order(rownames(allDepMap_expression_SkinCancer)),]
+```
+
+searching for rownames which contain 'BRAF' and creating a matrix containing all rows with 'BRAF'. Name of the new matrix: BRAFexpression. And creating a boxplot of this matrix
+```{r}
+which(rownames(allDepMap_expression_SkinCancer) == "BRAF")
+BRAFexpression <-allDepMap_expression_SkinCancer[which(rownames(allDepMap_expression_SkinCancer) == "BRAF"),]
+boxplot(BRAFexpression)
+```
+
+We performed the same procedure for 'RAS'. BUt there were no genes called 'RAS' so we saw in the list that there were genes containing 'RAS' in der name. We searched for them. Because the list was ordered alphabetically they were all close together. We identified the rows containing those genes and created a matrix with those genes. Aditionally we created a boxplot. 
+```{r}
+which(rownames(allDepMap_expression_SkinCancer) == "RARS")
+which(rownames(allDepMap_expression_SkinCancer) == "RASSF9")
+RASexpression <- allDepMap_expression_SkinCancer[27136:27181,]
+boxplot(RASexpression)
+```
+
+Performing the same procedure for 'NF'
+```{r}
+which(rownames(allDepMap_expression_SkinCancer) == "NF1")
+which(rownames(allDepMap_expression_SkinCancer) == "NF1P8")
+NF1expression <- allDepMap_expression_SkinCancer[22721:22729,]
+boxplot(NF1expression)
+```
+
+SAme procedure for 'WT'
+```{r}
+which(rownames(allDepMap_expression_SkinCancer) == "WT1")
+which(rownames(allDepMap_expression_SkinCancer) == "WTIP")
+WTexpression <- allDepMap_expression_SkinCancer[47802:47806,]
+boxplot(WTexpression)
+```
+
+Binding the different matrices together. The new matrix is called 'Drivermutation.expr'. From this matrix we created a boxplot.
+```{r}
+rbind(BRAFexpression, RASexpression, NF1expression, WTexpression)
+Drivermutation.expr <- rbind(BRAFexpression, RASexpression, NF1expression, WTexpression)
+boxplot(Drivermutation.expr)
+```
+
+Looking at the variance in expression of the RASexpession matrix and creating a histogram
+```{r}
+RASexpression1 = apply(RASexpression, 1, function(x){var(x)})
+RASexpression1
+hist(RASexpression1)
+```
+
+The same we performed for the NF1expression matrix and the WTexpression matrix.#
+```{r}
+NF1expression1 = apply(NF1expression, 1, function(x){var(x)})
+hist(NF1expression1)
+WTexpression1 = apply(WTexpression, 1,function(x){var(x)})
+hist(WTexpression1)
+```
+     
+     
+creating a Barplot with the data of the Drivermutationmatrix
+so we can see the expression of the different genes over all celllines. 
+The first barplot has the cellines in the x-axis and the expression of all mutations in the y-axis so we see the expression of all genes in the celllines
+```{r}     
+barplot(as.matrix(Drivermutation.expr[-1,-1]))
+```
+    
+We want to have the genes in the x-axis so i created a new matrix with the rows and columns of the drivermutation.expr swapped
+```{r}
+df2 <- data.frame(t(Drivermutation.expr[-2, -2]))
+```
+     
+creating a barplot with this new matrix df2
+the genes are the x-axis and the expression is the y-axis over all celllines.The lines in the bars are the celllines -> so we can see in which celline how much of this gene is expressed
+```{r}     
+barplot(as.matrix(df2[-1,-1]))
+```
+Boxplot over the same data 
+```{r}     
+boxplot(as.matrix(df2[-1, -1]))
+```
+
+Show rownames of matrix to compare if they all show the genes in rownames
+```{r}
+rownames(Drivermutation.expr)
+rownames(allDepMap_kd.ceres_SkinCancer)
+rownames(allDepMap_kd.prob_SkinCancer)
+rownames(allDepMap_copynumber_SkinCancer)
+rownames(allDepMap_expression_SkinCancer)
+```
+
+We generated a new matrix (drivermutations.knockdown) which contains the knockdown data of the mutated genes from Drivermutation.expr. We look at the dimension of this new matrix
+```{r}
+drivermutations.knockdown = allDepMap_kd.ceres_SkinCancer[which(rownames(allDepMap_kd.ceres_SkinCancer) %in% rownames(Drivermutation.expr)),]
+dim(drivermutations.knockdown)
+```
+
+We generated a new matrix (drivermutations.knockdown.prob) which contains the knockdown.prob data of the mutated genes from Drivermutation.expr. We look at the simension of thsi new matrix
+```{r}
+drivermutations.knockdown.prob = allDepMap_kd.prob_SkinCancer[which(rownames(allDepMap_kd.prob_SkinCancer) %in% rownames(Drivermutation.expr)),]
+dim(drivermutations.knockdown.prob)
+```
+
+We generated a new matrix (drivermutations.copynumber) which contains the copynumber data of the mutated genes from Drivermutation.expr and look at its dimension.
+````{r}
+drivermutations.copynumber = allDepMap_copynumber_SkinCancer[which(rownames(allDepMap_copynumber_SkinCancer) %in% rownames(Drivermutation.expr)),]
+dim(drivermutations.copynumber)
+```
+
+We generated a new matrix (drivermutations.expression) which contains the expression data of the mutated genes from Drivermutation.expr and looked at its dimension.
+```{r}
+drivermutations.expression = allDepMap_expression_SkinCancer[which(rownames(allDepMap_expression_SkinCancer) %in% rownames(Drivermutation.expr)),]
+dim(drivermutations.expression)
+```
+
+Generating a heatmap of the knockdown data and the knockdown.prob data
+```{r}
+heatmap(as.matrix(drivermutations.knockdown))
+heatmap(as.matrix(drivermutations.knockdown.prob))
+```
+
+K-measn clustering and scatter plot
+installed this package to get the plots
+```{r}
+install.packages('fpc') ; library(fpc)
+```
+
+Proceeding a k-means with 4 centers and plotting this as a scatter plot.
+```{r}
+km = kmeans(t(targetexpression), centers = 4)
+plotcluster(t(targetexpression), km$cluster)
+```
+Experimenting with different centerns -> with 3 centers we have the best plot
+```{r}
+km = kmeans(x = t(targetexpression), centers = 3, nstart = 10)
+plotcluster(t(targetexpression), km$cluster)
+```
+
+Bind targetexpression und drivermutations.expression for a following PCA.
+```{r}
+rbind(drivermutations.expression, targetexpression)
+PCA <- rbind(drivermutations.expression, targetexpression)
+```
+
+Executing the PCA 
+```{r}
+pca = prcomp(t(PCA), center = F, scale. = F)
+show(pca)
+```
+
+Summary of the PCA
+```{r}
+summary(pca)
+```
+90% of our data is located in PC1, nearly all informations can be shown in PC1
+str() to have a look at our PCA objects 
+```{r}
+str(pca)
+```
+
+Plotting PCA
+```{r}
+plot(pca, type = "l")
+```
+
+a new package is needed for following plotting
+```{r}
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+```
+```{r}
+ggbiplot(pca)
+```
+
+pca Punkte als Zelllinien darstellen 
+ggbiplot(pca, labels=rownames(pca$x))
+#PCA für PC2vsPC3
+ggbiplot(pca, choices = 2:3)
+#PCA für drivermutations.knockdown
+pca = prcomp(drivermutations.knockdown, center = F, scale. = F)
+summary(pca)
+str(pca)
+plot(pca, type = "l")
+library(ggbiplot)
+ggbiplot(pca)
+ggbiplot(pca, choices = 2:3)
+ggbiplot(pca, labels=rownames(pca$x))
+#PCA für drivermutations.knockdown.prob
+pca = prcomp(drivermutations.knockdown.prob, center = F, scale. = F)
+summary(pca)
+str(pca)
+plot(pca, type = "l")
+library(ggbiplot)
+ggbiplot(pca)
+ggbiplot(pca, choices = 2:3)
+#PCA für drivermutations.copynumber
+pca = prcomp(drivermutations.copynumber, center = F, scale. = F)
+summary(pca)
+str(pca)
+plot(pca, type = "l")
+#fällt auf, dass der Knick etwas anders ist als die pca´s davor. Bedeutung ?
+library(ggbiplot)
+ggbiplot(pca)
+#kann man gut erkennen
+ggbiplot(pca, choices = 2:3)
+#PCA von driver knockdown und prob.
+rbind(drivermutations.knockdown.prob, drivermutations.knockdown)
+PCA2 <- rbind(drivermutations.knockdown.prob, drivermutations.knockdown)
+pca = prcomp(PCA2, center = F, scale. = F)
+summary(pca)
+plot(pca, type = "l")
+library(ggbiplot)
+ggbiplot(pca)
+ggbiplot(pca, choices = 2:3)
+ggbiplot(pca, labels=rownames(pca$x))
