@@ -1,4 +1,4 @@
-#Sample process Workthrough of the project for Group 4
+
 
 #Importing the libs
 library(ggplot2)
@@ -11,6 +11,9 @@ library(pheatmap)
 library(caret)
 library(tidyverse)
 library(dendextend)
+library(factoextra)
+library(devtools)
+library(ggbiplot)
 
 #Setting the sys-path
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
@@ -35,23 +38,63 @@ samples = data$annotation$DepMap_ID[which(data$annotation$Primary.Disease == sam
 processed_data <- lapply(1:length(dt_new), function(a) { #pick the data for your sample 
   dat_picker <- dt_new[[a]] #pick one file at each iteration 
   output <- dat_picker[,which(colnames(dat_picker) %in% samples)]
-  output <- output[complete.cases(output),] #make a datacleanup
+  output <- output[complete.cases(output),]
+  output <- output[order(rownames(output)),]#make a datacleanup
   return(output)
 })
 names(processed_data) <- names(dt_new)
 
 ids = which(names(mut) %in% samples) #extract the mutation data (take care; this is a list of lists; therefore special treatment needed)
-allDepMap_mutation_SkinCancer = lapply(ids, function(a) mut[[a]])
+allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
+  mut[[a]]})
+# putting the names of the matrixes in tne allDep_mutation 
+names(allDepMap_mutation_SkinCancer) <- samples
 
-
+# losing the mutations which are not deleterious
 allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
-# extract all the mutations out of our mutationframe which are deleterious
-names(allDepMap_mutation_SkinCancer) = samples
+
+#allDepMap_mutation_SkinCancer = lapply(1:34, function(a){
+#  k<-a
+#  rbilapply(c("^WT.*", "^RAS.*", "^RB.*","^NF.*","^BRAF.*"),function(a){
+#    allDepMap_mutation_SkinCancer[[k]][grep(a, as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- a
+#    })})
+# one matrix with all the mutations
+mymatrix <- data.frame()
+  
+a = 3
+while (a<35) {mymatrix <- rbind(mymatrix,allDepMap_mutation_SkinCancer[[a]])
+a = a+1   
+}
+mymatrix <- mymatrix[order(mymatrix$Hugo_Symbol),]
+
+# unite all members of the same protein familie 
+
+
+
+grep('^WT.*', as.vector(mymatrix$Hugo_Symbol), value = F)
+mymatrix[grep("^WT.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "WT"
+
+grep('^RAS.*', as.vector(mymatrix$Hugo_Symbol), value = F)
+mymatrix[grep("^RAS.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "RAS"
+
+grep('^RB.*', as.vector(mymatrix$Hugo_Symbol), value = F)
+mymatrix[grep("^RB.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "RB"
+
+grep('^NF.*', as.vector(mymatrix$Hugo_Symbol), value = F)
+mymatrix[grep("^NF.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "NF"
+
+grep('^BRAF.*', as.vector(mymatrix$Hugo_Symbol), value = F)
+mymatrix[grep("^BRAF.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "BRAF"
+
+
+
+
 
 ###################################################################################################
 #Part 2: Visualize the data
 ###################################################################################################
 #Prepare the data for plotting
+
 finalPlottingData <- lapply(1:(length(processed_data)-1), function(a) { #take care to take not all the processed data becasue we will not need annotation
   dtPicker <- processed_data[[a]]
   out <- melt(dtPicker) #bind the data togehter that we have samples and values as columns
@@ -78,7 +121,7 @@ ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
 #Other things can be done in the same format
 
 #Make a heatmap of the kdCERES values
-heatmap(as.matrix(processed_data$kd.ceres), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+pheatmap(as.matrix(processed_data$kd.ceres), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
          main = paste0("kdCERES for potential 2nd site targets"),
          show_rownames = F, show_colnames = T,
          cutree_rows = 4,
@@ -96,8 +139,14 @@ plot(cor.hc, las = 2, cex.lab = 0.7)
 
 
 #Make a histogram
-singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(mut), function(a) {out <- as.data.frame(as.vector(unique(mut[[a]]$Hugo_Symbol)))}))))[,1])
+singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepMap_mutation_SkinCancer), function(a) {out <- as.data.frame(as.vector(unique(allDepMap_mutation_SkinCancer[[a]]$Hugo_Symbol)))}))))[,1])
 
+
+test <- sapply(seq_along(replacements), function(a){
+  picker = replacements[a]
+  singleGenes[grep(picker, singleGenes)] <- picker
+  return(singleGenes)
+})
 
 geneCounts <- sapply(seq_along(singleGenes), function(a) {
   genePicker <- singleGenes[a] #pick one gene
@@ -118,7 +167,12 @@ head(sortedGenCounts) #be amazed
 
 #Plot only the top 50 genes
 plotData <- sortedGenCounts[1:40, ,drop = FALSE]
+
 plotData$Gene <- rownames(plotData)
+
+plotData$Gene <- factor(plotData$Gene, levels = plotData$Value)
+
+
 
 ggplot(data = plotData) +
   (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
@@ -154,6 +208,75 @@ driverkd.ceres <- dataTopDriverGenes$kd.ceres
 #ich weiß nicht so recht, worauf ihr da alles selektiert habt bei euch; also ich selektiere hier einfach auf die TOP 40 eurer Driver mutations....
 
 
+##########################################kmeans#####################################################
+lapply(1:34, function(v){ "ABAT" %in% allDepMap_mutation_SkinCancer[[5]][,"Hugo_Symbol"]})
+
+
+
+km = kmeans(x =t(driverexpression), centers = 6, nstart = 30)
+wss = sapply(1:11, function(k) {
+  kmeans(x = t(driverexpression), centers = k)$tot.withinss
+})
+plot(1:11, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Total within-clusters sum of squares")
+
+
+D = dist(t(driverexpression))
+km = kmeans(x = t(driverexpression), centers = 8, nstart = 100)
+
+fviz_cluster(km, data = t(driverexpression))
+
+D = dist(t(driverexpression))
+plot(silhouette(km$cluster, D))
+mean(silhouette(km$cluster, D))
+a = silhouette(km$cluster, D)
+
+
+# function to compute average silhouette for k clusters
+avg_sil <- function(k) {
+  km.res <- kmeans(t(driverexpression), centers = k, nstart = 25)
+  ss <- silhouette(km.res$cluster, dist(t(driverexpression)))
+  mean(ss[, 3])
+}
+
+# Compute and plot wss for k = 2 to k = 15
+k.values <- 2:15
+
+# extract avg silhouette for 2-15 clusters
+avg_sil_values <- map_dbl(k.values, avg_sil)
+
+plot(k.values, avg_sil_values,
+     type = "b", pch = 19, frame = FALSE, 
+     xlab = "Number of clusters K",
+     ylab = "Average Silhouettes")
+
+
+
+
+fviz_nbclust(t(driverexpression), kmeans, method = "silhouette")
+
+km2 <- kmeans(t(driverexpression), centers = 2, nstart = 25)
+km3 <- kmeans(t(driverexpression), centers = 6, nstart = 25)
+km4 <- kmeans(t(driverexpression), centers = 4, nstart = 25)
+km5 <- kmeans(t(driverexpression), centers = 9, nstart = 25)
+
+# plots to compare
+p1 <- fviz_cluster(km2, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 2")
+p2 <- fviz_cluster(km3, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 6")
+p3 <- fviz_cluster(km4, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 9")
+
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+
+rm(km,km2,km3,km4,km5,p1,p2,p3,p4)
+
+######PCA #####################################################################################
+
+pca = prcomp(t(driverexpression), center = F, scale. = F)
+summary(pca)
+str(pca)
+plot(pca, type = "l")
+
 ###################################################################################################
 #Part 4: Making a statistical test
 ###################################################################################################
@@ -184,6 +307,8 @@ names(potSecondSites) <- driverGenes #rename the list of lists
 lapply(potSecondSites, head) #look at the nice data
 
 #Diese 2nd sites kann man nun ordnen (ascending; also kleine p-values) --> und sich zB aus jedes Liste die TOP 20 rausholen; aber das könnt ihr nun selbst
+
+
 
 
 ###################################################################################################
