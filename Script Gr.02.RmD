@@ -1,0 +1,172 @@
+---
+title: "Script Gr 02 (NEU!)"
+output: html_document
+---
+
+Installing different packages and loading the library
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("gridExtra")
+library(gridExtra)
+install.packages("reshape2")
+library(reshape2)
+install.packages("data.table")
+library(data.table)
+install.packages("cluster")
+library(cluster)
+install.packages("rstudioapi")
+library(rstudioapi)
+install.packages("pheatmap")
+library(pheatmap)
+install.packages("caret")
+library(caret)
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("dendextend")
+library(dendextend)
+install.packages("factoextra")
+library(factoextra)
+install.packages("devtools")
+library(devtools)
+install.packages("ggbiplot")
+library(ggbiplot)
+```
+
+Setting the sys-path
+```{r}
+root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
+```
+
+
+Part 1: Data Cleanup
+
+Extract and split the data  #read in the data (with paste0 you can concatenate strings; here some paths this makes your code very flexible) #pick the mutation data (this has a specific format and needs to be treated seperatelly)
+```{r}
+data = readRDS(paste0(root.dir,"/DepMap19Q1_allData.RDS"))
+mut <- data$mutation 
+```
+
+#define an operator that will only pick the data that is NOT defined in the list; so the data that needs to be excluded so in our case: DNase, Methylation and RNA data should be excluded; so it will extract notin, #extract only non-mutation data, rename the data with the original names 
+```{r}
+'%!in%' <- function(x,y)!('%in%'(x,y)) 
+dt_new <- lapply(which(names(data) %!in% "mutation"), function(a) data[[a]]) 
+names(dt_new) <- names(data)[which(names(data) %!in% "mutation")] 
+```
+
+#define the samples
+```{r}
+sample_case = c("Skin Cancer") 
+``` 
+
+#Get the data for the specific celltype
+```{r}
+samples = data$annotation$DepMap_ID[which(data$annotation$Primary.Disease == sample_case)]
+```
+
+#pick the data for your sample, #pick one file at each iteration #make a datacleanup
+```{r}
+processed_data <- lapply(1:length(dt_new), function(a) {  
+  dat_picker <- dt_new[[a]]  
+  output <- dat_picker[,which(colnames(dat_picker) %in% samples)]
+  output <- output[complete.cases(output),]
+  output <- output[order(rownames(output)),]
+  return(output)
+})
+names(processed_data) <- names(dt_new)
+```
+
+#extract the mutation data (take care; this is a list of lists; therefore special treatment needed)
+```{r}
+ids = which(names(mut) %in% samples) 
+allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
+  mut[[a]]})
+```
+
+# putting the names of the matrixes in the allDep_mutation
+```{r}
+names(allDepMap_mutation_SkinCancer) <- samples
+```
+
+# losing the mutations which are not deleterious
+```{r}
+allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
+```
+
+
+Part 2: Data vizualisation
+
+prepare the data for plotting, #take care to take not all the processed data becasue we will not need annotation, bind the data togehter that we have samples and values as columns, add the genes; probably this might be useful in a later stage, add a labelling column rename the colums, rename the data
+```{r}
+finalPlottingData <- lapply(1:(length(processed_data)-1), function(a) {
+  dtPicker <- processed_data[[a]]
+  out <- melt(dtPicker)  
+  out$Gene <- rep(rownames(dtPicker), ncol(dtPicker)) 
+  out$Case <- names(processed_data)[1:(length(processed_data)-1)][a] 
+  colnames(out) <- c("Sample", "Value", "Gene", "Case") 
+  return(out)
+})
+names(finalPlottingData) <- names(processed_data)[1:(length(processed_data)-1)]  
+lapply(finalPlottingData, head)
+```
+
+coloured boxplots, reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers), #format the size of the theme nicely, #define the legend position (here no leghend will be needed), #define the legend direction if one is there, #make the title of the plot into the middle, #define the orientation of the text on the x-axis, #no title of the legend should be plotted, #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming, #define the orientation of the text of the y-axis
+```{r}
+ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
+  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + 
+  theme_bw(base_size = 7) + 
+  theme(legend.position= "none", 
+        legend.direction="horizontal", 
+        plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        legend.title= element_blank(), 
+        axis.title.x = element_blank(), 
+        strip.text.y = element_text(angle = 90)) 
+```
+
+creating a heatmap with the kd.ceres values -> not the whole matrix just the first ten genes and all the celllines, #take care blue means really, really significant p-value!
+```{r}
+pheatmap(as.matrix(processed_data$kd.ceres[1:10, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+         main = paste0("kdCERES for potential 2nd site targets"),
+         show_rownames = F, show_colnames = T,
+         cutree_rows = 4,
+         cutree_cols = 2, 
+         fontsize_row=10) 
+```
+
+hierachical cluster
+```{r}
+cor.mat = cor(processed_data$kd.ceres[1:50,], method = "spearman")
+cor.dist = as.dist(1 - cor.mat)
+cor.hc = hclust(cor.dist, method = "ward.D2")
+cor.hc = as.dendrogram(cor.hc)
+plot(cor.hc, las = 2, cex.lab = 0.7)
+```
+
+histogram
+```{r}
+singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepMap_mutation_SkinCancer), function(a) {out <- as.data.frame(as.vector(unique(allDepMap_mutation_SkinCancer[[a]]$Hugo_Symbol)))}))))[,1])
+
+test <- sapply(seq_along(replacements), function(a){
+  picker = replacements[a]
+  singleGenes[grep(picker, singleGenes)] <- picker
+  return(singleGenes)
+})
+```
+
+geneCounts <- sapply(seq_along(singleGenes), function(a) {
+  genePicker <- singleGenes[a] #pick one gene
+  print(paste0("I am doing: ", a))
+  sumGene <- lapply(seq_along(allDepMap_mutation_SkinCancer), function(b) {
+    mutPicker <- allDepMap_mutation_SkinCancer[[b]] #pick one of the 34 mutation lists
+    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) #look how often an entry is is in the mutation list
+    return(out)
+  })
+  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) #sum it up to get the total count for each gene
+  return(geneCount)
+})
+names(geneCounts) <- singleGenes #rename it nicely
+geneCounts <- as.data.frame(geneCounts) #make a nice dataframe
+colnames(geneCounts) <- c("Value")
+sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
+head(sortedGenCounts) #be amazed
