@@ -316,6 +316,32 @@ lapply(potSecondSites, head) #look at the nice data
 
 #Diese 2nd sites kann man nun ordnen (ascending; also kleine p-values) --> und sich zB aus jedes Liste die TOP 20 rausholen; aber das könnt ihr nun selbst
 
+# 
+potSecondSites <- lapply(potSecondSites, function(a){
+  a <- as.data.frame(cbind(a$output, rownames(a)))
+  a <- a[order(a[1]), ]
+})
+
+
+potSecondSitestop20 <- lapply(potSecondSites, function (a){
+  a[1:20,]
+})
+
+
+
+
+ggplot(data = potSecondSitestop20$TTN) +
+  (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
+
 
 
 
