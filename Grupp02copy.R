@@ -13,7 +13,7 @@ library(tidyverse)
 library(dendextend)
 library(factoextra)
 library(devtools)
-library(ggbiplot)
+library(ggfortify)
 
 #Setting the sys-path
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
@@ -274,6 +274,9 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4)
 
 pca = prcomp(t(driverexpression), center = F, scale. = F)
 summary(pca)
+autoplot(prcomp(t(driverexpression)), data = t(driverexpression), colour = 'blue')
+#zum Anzeigen von labels (Zelllinien)
+autoplot(prcomp(t(driverexpression)), data = t(driverexpression), colour = 'blue', label = TRUE, label.size = 2)
 str(pca)
 plot(pca, type = "l")
 
