@@ -143,30 +143,25 @@ cor.hc = as.dendrogram(cor.hc)
 plot(cor.hc, las = 2, cex.lab = 0.7)
 ```
 
-histogram
+histogram, #pick one gene, #pick one of the 34 mutation lists, #look how often an entry is is in the mutation list, #sum it up to get the total count for each gene, #rename it nicely, #make a nice dataframe, #sort the data frame
 ```{r}
 singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepMap_mutation_SkinCancer), function(a) {out <- as.data.frame(as.vector(unique(allDepMap_mutation_SkinCancer[[a]]$Hugo_Symbol)))}))))[,1])
 
-test <- sapply(seq_along(replacements), function(a){
-  picker = replacements[a]
-  singleGenes[grep(picker, singleGenes)] <- picker
-  return(singleGenes)
-})
-```
-
 geneCounts <- sapply(seq_along(singleGenes), function(a) {
-  genePicker <- singleGenes[a] #pick one gene
+  genePicker <- singleGenes[a] 
   print(paste0("I am doing: ", a))
   sumGene <- lapply(seq_along(allDepMap_mutation_SkinCancer), function(b) {
-    mutPicker <- allDepMap_mutation_SkinCancer[[b]] #pick one of the 34 mutation lists
-    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) #look how often an entry is is in the mutation list
+    mutPicker <- allDepMap_mutation_SkinCancer[[b]] 
+    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) 
     return(out)
   })
-  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) #sum it up to get the total count for each gene
+  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) 
   return(geneCount)
 })
-names(geneCounts) <- singleGenes #rename it nicely
-geneCounts <- as.data.frame(geneCounts) #make a nice dataframe
+names(geneCounts) <- singleGenes 
+geneCounts <- as.data.frame(geneCounts) 
 colnames(geneCounts) <- c("Value")
-sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
-head(sortedGenCounts) #be amazed
+sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] 
+head(sortedGenCounts)
+```
+
