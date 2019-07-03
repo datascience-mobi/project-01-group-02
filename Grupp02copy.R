@@ -121,7 +121,7 @@ ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
 #Other things can be done in the same format
 
 #Make a heatmap of the kdCERES values
-pheatmap(as.matrix(processed_data$kd.ceres), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+pheatmap(as.matrix(processed_data$kd.ceres[1:10, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
          main = paste0("kdCERES for potential 2nd site targets"),
          show_rownames = F, show_colnames = T,
          cutree_rows = 4,
