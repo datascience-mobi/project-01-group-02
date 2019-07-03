@@ -14,6 +14,11 @@ library(dendextend)
 library(factoextra)
 library(devtools)
 library(ggfortify)
+library(rstudioapi)  
+library(data.table) 
+library(ggplot2) 
+library(scales) 
+library(stats)
 
 #Setting the sys-path
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
