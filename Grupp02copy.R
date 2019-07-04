@@ -58,43 +58,21 @@ names(allDepMap_mutation_SkinCancer) <- samples
 # losing the mutations which are not deleterious
 allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
 
-#allDepMap_mutation_SkinCancer = lapply(1:34, function(a){
-#  k<-a
-#  rbilapply(c("^WT.*", "^RAS.*", "^RB.*","^NF.*","^BRAF.*"),function(a){
-#    allDepMap_mutation_SkinCancer[[k]][grep(a, as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- a
-#    })})
-# one matrix with all the mutations
-mymatrix <- data.frame()
-  
-a = 3
-while (a<35) {mymatrix <- rbind(mymatrix,allDepMap_mutation_SkinCancer[[a]])
-a = a+1   
-}
-mymatrix <- mymatrix[order(mymatrix$Hugo_Symbol),]
-
-# unite all members of the same protein familie 
+# losing all the genes which are not in every data frame 
+ a <- unique(c(rownames(processed_data[[1]]),rownames(processed_data[[2]]),rownames(processed_data[[3]]),rownames(processed_data[[4]])))
 
 
-
-grep('^WT.*', as.vector(mymatrix$Hugo_Symbol), value = F)
-mymatrix[grep("^WT.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "WT"
-
-grep('^RAS.*', as.vector(mymatrix$Hugo_Symbol), value = F)
-mymatrix[grep("^RAS.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "RAS"
-
-grep('^RB.*', as.vector(mymatrix$Hugo_Symbol), value = F)
-mymatrix[grep("^RB.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "RB"
-
-grep('^NF.*', as.vector(mymatrix$Hugo_Symbol), value = F)
-mymatrix[grep("^NF.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "NF"
-
-grep('^BRAF.*', as.vector(mymatrix$Hugo_Symbol), value = F)
-mymatrix[grep("^BRAF.*", as.vector(mymatrix$Hugo_Symbol)),"Hugo_Symbol"] <- "BRAF"
+b <-sapply(seq_along(a), function(x){
+  if(a[x] %in% rownames(processed_data$expression) & a[x] %in% rownames(processed_data$copynumber) & a[x] %in% rownames(processed_data$kd.ceres) & a[x] %in% rownames(processed_data$kd.prob))
+  {return(a[x])} else {
+    next
+  }
+})
 
 
+b <- as.vector(b)
 
-
-
+b <- complete.cases(b)
 ###################################################################################################
 #Part 2: Visualize the data
 ###################################################################################################
@@ -146,12 +124,6 @@ plot(cor.hc, las = 2, cex.lab = 0.7)
 #Make a histogram
 singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepMap_mutation_SkinCancer), function(a) {out <- as.data.frame(as.vector(unique(allDepMap_mutation_SkinCancer[[a]]$Hugo_Symbol)))}))))[,1])
 
-
-test <- sapply(seq_along(replacements), function(a){
-  picker = replacements[a]
-  singleGenes[grep(picker, singleGenes)] <- picker
-  return(singleGenes)
-})
 
 geneCounts <- sapply(seq_along(singleGenes), function(a) {
   genePicker <- singleGenes[a] #pick one gene
@@ -314,32 +286,34 @@ potSecondSites <- lapply(seq_along(driverGenes), function(a) {
 names(potSecondSites) <- driverGenes #rename the list of lists
 lapply(potSecondSites, head) #look at the nice data
 
-#Diese 2nd sites kann man nun ordnen (ascending; also kleine p-values) --> und sich zB aus jedes Liste die TOP 20 rausholen; aber das könnt ihr nun selbst
-
-# 
+# order the data according to their p-values
 potSecondSites <- lapply(potSecondSites, function(a){
   a <- as.data.frame(cbind(a$output, rownames(a)))
   a <- a[order(a[1]), ]
 })
 
 
-potSecondSitestop20 <- lapply(potSecondSites, function (a){
-  a[1:20,]
+# selecting the 20 Genes out of every DriverGene List with the lowest p score
+potSecondSitestop20 <- lapply(seq_along(potSecondSites), function (a){
+  output <- potSecondSites[[a]][1:20,]
+  return(output)
 })
+names(potSecondSitestop20) <- driverGenes
 
 
-
-
-ggplot(data = potSecondSitestop20$TTN) +
-  (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+potSecondSitestop20plot <- lapply(seq_along(potSecondSitestop20), function(a){
+  output <- ggplot(data = potSecondSitestop20[[a]]) +
+    (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
+    theme_bw(base_size = 7) + #format the size of the theme nicely
+    theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+          legend.direction="horizontal", #define the legend direction if one is there
+          plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
+          legend.title= element_blank(), #no title of the legend should be plotted
+          axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+          strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+  return(output)
+})
 
 
 
