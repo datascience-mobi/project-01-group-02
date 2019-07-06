@@ -49,6 +49,8 @@ processed_data <- lapply(1:length(dt_new), function(a) { #pick the data for your
 })
 names(processed_data) <- names(dt_new)
 
+processed_data$annotation <- data$annotation[which(data$annotation$DepMap_ID %in% samples),]
+
 ids = which(names(mut) %in% samples) #extract the mutation data (take care; this is a list of lists; therefore special treatment needed)
 allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
   mut[[a]]})
@@ -58,21 +60,37 @@ names(allDepMap_mutation_SkinCancer) <- samples
 # losing the mutations which are not deleterious
 allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
 
-# losing all the genes which are not in every data frame 
+# losing all the genes which are not in every data frame ######################
+
+#first we need to pick all Gene names we have out of our data
  a <- unique(c(rownames(processed_data[[1]]),rownames(processed_data[[2]]),rownames(processed_data[[3]]),rownames(processed_data[[4]])))
 
-
-b <-sapply(seq_along(a), function(x){
+# now we pick these genes which are in all 4 dataframes we need for further analysis
+i <- 1
+out <- vector("character", length(seq_along(1:16970)))
+for (x in seq_along(a)) {
   if(a[x] %in% rownames(processed_data$expression) & a[x] %in% rownames(processed_data$copynumber) & a[x] %in% rownames(processed_data$kd.ceres) & a[x] %in% rownames(processed_data$kd.prob))
-  {return(a[x])} else {
-    next
-  }
+  {out[i] <- a[x]
+  i <- i+1
+  } 
+}
+
+processed_data2 <- processed_data
+
+processed_data2 <- lapply(processed_data, function(a) {
+  a <- a[which(rownames(a) %in% out),]
+  return(a)
 })
+processed_data2$annotation <- processed_data$annotation
+processed_data <- processed_data2
+
+allDepMap_mutation_SkinCancer <- lapply(allDepMap_mutation_SkinCancer, function(a) {
+  a <- a[which(as.character(a[,2]) %in% out),]
+  return(a)
+  })
 
 
-b <- as.vector(b)
 
-b <- complete.cases(b)
 ###################################################################################################
 #Part 2: Visualize the data
 ###################################################################################################
