@@ -54,11 +54,20 @@ processed_data$annotation <- data$annotation[which(data$annotation$DepMap_ID %in
 ids = which(names(mut) %in% samples) #extract the mutation data (take care; this is a list of lists; therefore special treatment needed)
 allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
   mut[[a]]})
-# putting the names of the matrixes in tne allDep_mutation 
-names(allDepMap_mutation_SkinCancer) <- samples
 
 # losing the mutations which are not deleterious
 allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
+
+# putting the names of the matrixes in tne allDep_mutation 
+names(allDepMap_mutation_SkinCancer) <- samples
+
+OneMatrix <- data.frame()
+for (i in c(1:34)) {
+  OneMatrix <- rbind(OneMatrix, allDepMap_mutation_SkinCancer[[i]][,Hugo_Symbol:DepMap_ID])
+}
+
+ZelllinesMutations <-OneMatrix[which(OneMatrix$Hugo_Symbol %in% topDriverGenes ),]
+ZelllinesMutations <- cbind(ZelllinesMutations$Hugo_Symbol, ZelllinesMutations$DepMap_ID)
 
 # losing all the genes which are not in every data frame ######################
 
@@ -84,10 +93,6 @@ processed_data2 <- lapply(processed_data, function(a) {
 processed_data2$annotation <- processed_data$annotation
 processed_data <- processed_data2
 
-allDepMap_mutation_SkinCancer <- lapply(allDepMap_mutation_SkinCancer, function(a) {
-  a <- a[which(as.character(a[,2]) %in% out),]
-  return(a)
-  })
 
 
 
@@ -119,6 +124,8 @@ ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
         axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
         strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
+
+
 #Other things can be done in the same format
 
 #Make a heatmap of the kdCERES values
@@ -129,14 +136,7 @@ pheatmap(as.matrix(processed_data$kd.ceres[1:10, 1:34]), clustering_method = "wa
          cutree_cols = 2, 
          fontsize_row=10) #take care blue means really, really significant p-value!
 
-#Make a hyrachial clustering
 
-cor.mat = cor(processed_data$kd.ceres[1:50,], method = "spearman")
-cor.dist = as.dist(1 - cor.mat)
-cor.hc = hclust(cor.dist, method = "ward.D2")
-cor.hc = as.dendrogram(cor.hc)
-plot(cor.hc, las = 2, cex.lab = 0.7)
- 
 
 
 #Make a histogram
@@ -160,12 +160,24 @@ colnames(geneCounts) <- c("Value")
 sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
 head(sortedGenCounts) #be amazed
 
+#Plotting the spread in the number of Mutations per Gene in a Boxplot
+geneCounts <- cbind(geneCounts, "Mutations per Gene")
+
+ggplot(data = geneCounts, aes(x="Mutations per Gene", y=Value)) +
+  geom_boxplot(aes(fill = "Mutations per Gene"), outlier.size = 2, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust= 0.5, size = 10), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
 #Plot only the top 50 genes
-plotData <- sortedGenCounts[1:40, ,drop = FALSE]
+plotData <- sortedGenCounts[1:10, ,drop = FALSE]
 
 plotData$Gene <- rownames(plotData)
-
-plotData$Gene <- factor(plotData$Gene, levels = plotData$Value)
 
 
 
@@ -175,10 +187,32 @@ ggplot(data = plotData) +
   theme(legend.position= "none", #define the legend position (here no leghend will be needed)
         legend.direction="horizontal", #define the legend direction if one is there
         plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
         legend.title= element_blank(), #no title of the legend should be plotted
         axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
         strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
+
+
+#Make a hyrachial clustering
+topDriverGenes <- rownames(plotData)
+
+
+drivergene <- 9 # determines which of the Drivermutations will be seen in the cluster at the x axis
+dataset <- processed_data$expression # determines which dataset we use
+realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
+
+colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
+
+cor.mat = cor(dataset[1:50,], method = "spearman")
+cor.dist = as.dist(1 - cor.mat)
+cor.hc = hclust(cor.dist, method = "ward.D2")
+cor.hc = as.dendrogram(cor.hc)
+plot(cor.hc, las = 2, cex.lab = 0.7)
+
+colnames(dataset) <- realcelllinenames
+rm(drivergene, realcelllinenames, dataset)
 
 
 ###################################################################################################
@@ -199,14 +233,9 @@ lapply(dataTopDriverGenes, head)
 driverexpression <- dataTopDriverGenes$expression
 driverkd.ceres <- dataTopDriverGenes$kd.ceres
 
-#targetexpression ist driverexpression --> könnt ihr selbst weiter machen
-#ich weiß nicht so recht, worauf ihr da alles selektiert habt bei euch; also ich selektiere hier einfach auf die TOP 40 eurer Driver mutations....
 
 
 ##########################################kmeans#####################################################
-lapply(1:34, function(v){ "ABAT" %in% allDepMap_mutation_SkinCancer[[5]][,"Hugo_Symbol"]})
-
-
 
 km = kmeans(x =t(driverexpression), centers = 6, nstart = 30)
 wss = sapply(1:11, function(k) {
@@ -267,13 +296,23 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4)
 
 ######PCA #####################################################################################
 
-pca = prcomp(t(driverexpression), center = F, scale. = F)
+drivergene <- 2 # determines which of the Drivermutations will be seen in the cluster at the x axis
+dataset <- processed_data$expression # determines which dataset we use
+realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
+
+colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
+
+
+pca = prcomp(t(dataset), center = F, scale. = F)
 summary(pca)
-autoplot(prcomp(t(driverexpression)), data = t(driverexpression), colour = 'blue')
+autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue')
 #zum Anzeigen von labels (Zelllinien)
-autoplot(prcomp(t(driverexpression)), data = t(driverexpression), colour = 'blue', label = TRUE, label.size = 2)
+autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue', label = TRUE, label.size = 3)
 str(pca)
 plot(pca, type = "l")
+
+colnames(dataset) <- realcelllinenames
+rm(drivergene, realcelllinenames, dataset)
 
 ###################################################################################################
 #Part 4: Making a statistical test
