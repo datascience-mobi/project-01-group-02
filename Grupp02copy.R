@@ -19,6 +19,7 @@ library(data.table)
 library(ggplot2) 
 library(scales) 
 library(stats)
+library(caTools)
 
 #Setting the sys-path
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
@@ -58,16 +59,7 @@ allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
 # losing the mutations which are not deleterious
 allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]})
 
-# putting the names of the matrixes in tne allDep_mutation 
-names(allDepMap_mutation_SkinCancer) <- samples
 
-OneMatrix <- data.frame()
-for (i in c(1:34)) {
-  OneMatrix <- rbind(OneMatrix, allDepMap_mutation_SkinCancer[[i]][,Hugo_Symbol:DepMap_ID])
-}
-
-ZelllinesMutations <-OneMatrix[which(OneMatrix$Hugo_Symbol %in% topDriverGenes ),]
-ZelllinesMutations <- cbind(ZelllinesMutations$Hugo_Symbol, ZelllinesMutations$DepMap_ID)
 
 # losing all the genes which are not in every data frame ######################
 
@@ -92,14 +84,12 @@ processed_data2 <- lapply(processed_data, function(a) {
 })
 processed_data2$annotation <- processed_data$annotation
 processed_data <- processed_data2
+rm(processed_data2)
 
 
 
+######################Plotting Data ###################################################
 
-###################################################################################################
-#Part 2: Visualize the data
-###################################################################################################
-#Prepare the data for plotting
 
 finalPlottingData <- lapply(1:(length(processed_data)-1), function(a) { #take care to take not all the processed data becasue we will not need annotation
   dtPicker <- processed_data[[a]]
@@ -112,34 +102,10 @@ finalPlottingData <- lapply(1:(length(processed_data)-1), function(a) { #take ca
 names(finalPlottingData) <- names(processed_data)[1:(length(processed_data)-1)] #rename the data 
 lapply(finalPlottingData, head)
 
-#Make some nice boxplots
-ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
-  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
 
+###################plotting Data - mutation ###########################################
 
-#Other things can be done in the same format
-
-#Make a heatmap of the kdCERES values
-pheatmap(as.matrix(processed_data$kd.ceres[1:10, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
-         main = paste0("kdCERES for potential 2nd site targets"),
-         show_rownames = F, show_colnames = T,
-         cutree_rows = 4,
-         cutree_cols = 2, 
-         fontsize_row=10) #take care blue means really, really significant p-value!
-
-
-
-
-#Make a histogram
 singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepMap_mutation_SkinCancer), function(a) {out <- as.data.frame(as.vector(unique(allDepMap_mutation_SkinCancer[[a]]$Hugo_Symbol)))}))))[,1])
 
 
@@ -160,65 +126,9 @@ colnames(geneCounts) <- c("Value")
 sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
 head(sortedGenCounts) #be amazed
 
-#Plotting the spread in the number of Mutations per Gene in a Boxplot
-geneCounts <- cbind(geneCounts, "Mutations per Gene")
-
-ggplot(data = geneCounts, aes(x="Mutations per Gene", y=Value)) +
-  geom_boxplot(aes(fill = "Mutations per Gene"), outlier.size = 2, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust= 0.5, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
-
-#Plot only the top 50 genes
-plotData <- sortedGenCounts[1:10, ,drop = FALSE]
-
-plotData$Gene <- rownames(plotData)
-
-
-
-ggplot(data = plotData) +
-  (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
-
-
-
-#Make a hyrachial clustering
-topDriverGenes <- rownames(plotData)
-
-
-drivergene <- 9 # determines which of the Drivermutations will be seen in the cluster at the x axis
-dataset <- processed_data$expression # determines which dataset we use
-realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
-
-colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
-
-cor.mat = cor(dataset[1:50,], method = "spearman")
-cor.dist = as.dist(1 - cor.mat)
-cor.hc = hclust(cor.dist, method = "ward.D2")
-cor.hc = as.dendrogram(cor.hc)
-plot(cor.hc, las = 2, cex.lab = 0.7)
-
-colnames(dataset) <- realcelllinenames
-rm(drivergene, realcelllinenames, dataset)
-
-
-###################################################################################################
-#Part 3: Making some kind of dimensionality reduction (PCA and kMeans)
-###################################################################################################
 #Extact the data for the top 40
+
+plotData <- sortedGenCounts[1:10, ,drop = FALSE]
 topDriverGenes <- rownames(plotData)
 
 dataTopDriverGenes <- lapply(1:length(processed_data), function(a) { #pick the data for your sample 
@@ -235,6 +145,111 @@ driverkd.ceres <- dataTopDriverGenes$kd.ceres
 
 
 
+
+# putting the names of the matrixes in one allDep_mutation 
+names(allDepMap_mutation_SkinCancer) <- samples
+
+OneMatrix <- data.frame()
+for (i in c(1:34)) {
+  OneMatrix <- rbind(OneMatrix, allDepMap_mutation_SkinCancer[[i]][,Hugo_Symbol:DepMap_ID])
+}
+
+ZelllinesMutations <- OneMatrix[which(OneMatrix$Hugo_Symbol %in% topDriverGenes ),]
+ZelllinesMutations <- cbind(ZelllinesMutations$Hugo_Symbol, ZelllinesMutations$DepMap_ID)
+
+
+###################################################################################################
+#Part 2: Visualize the data
+###################################################################################################
+
+
+#Make a heatmap of the kdCERES values
+pheatmap(as.matrix(processed_data$kd.ceres[25:45, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+         main = paste0("kdCERES for potential 2nd site targets"),
+         show_rownames = F, show_colnames = T,
+         cutree_rows = 4,
+         cutree_cols = 2, 
+         fontsize_row=10) #take care blue means really, really significant p-value!
+
+
+#Make some nice boxplots
+ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
+  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
+
+
+#Plotting the spread in the number of Mutations per Gene in a Boxplot
+geneCounts <- cbind(geneCounts, "Mutations per Gene")
+
+ggplot(data = geneCounts, aes(x="Mutations per Gene", y=Value)) +
+  geom_boxplot(aes(fill = "Mutations per Gene"), outlier.size = 2, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust= 0.5, size = 10), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
+#Plot only the top 50 genes
+
+
+plotData <- sortedGenCounts[1:10, ,drop = FALSE]
+
+plotData$Gene <- rownames(plotData)
+
+ggplot(data = plotData) +
+  (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+
+
+
+
+
+
+###################################################################################################
+#Part 3: Making some kind of dimensionality reduction (PCA and kMeans)
+###################################################################################################
+
+
+###########################  hirachial clustering #################################################
+
+
+
+drivergene <- 4 # determines which of the Drivermutations will be seen in the cluster at the x axis
+dataset <- processed_data$kd.ceres # determines which dataset we use
+realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
+
+colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
+
+cor.mat = cor(dataset[1:50,], method = "spearman")
+cor.dist = as.dist(1 - cor.mat)
+cor.hc = hclust(cor.dist, method = "ward.D2")
+cor.hc = as.dendrogram(cor.hc)
+plot(cor.hc, las = 2, cex.lab = 0.7)
+
+colnames(dataset) <- realcelllinenames
+rm(drivergene, realcelllinenames, dataset)
+
+
+
 ##########################################kmeans#####################################################
 
 km = kmeans(x =t(driverexpression), centers = 6, nstart = 30)
@@ -243,17 +258,8 @@ wss = sapply(1:11, function(k) {
 })
 plot(1:11, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Total within-clusters sum of squares")
 
-
-D = dist(t(driverexpression))
-km = kmeans(x = t(driverexpression), centers = 8, nstart = 100)
-
-fviz_cluster(km, data = t(driverexpression))
-
 D = dist(t(driverexpression))
 plot(silhouette(km$cluster, D))
-mean(silhouette(km$cluster, D))
-a = silhouette(km$cluster, D)
-
 
 # function to compute average silhouette for k clusters
 avg_sil <- function(k) {
@@ -261,20 +267,6 @@ avg_sil <- function(k) {
   ss <- silhouette(km.res$cluster, dist(t(driverexpression)))
   mean(ss[, 3])
 }
-
-# Compute and plot wss for k = 2 to k = 15
-k.values <- 2:15
-
-# extract avg silhouette for 2-15 clusters
-avg_sil_values <- map_dbl(k.values, avg_sil)
-
-plot(k.values, avg_sil_values,
-     type = "b", pch = 19, frame = FALSE, 
-     xlab = "Number of clusters K",
-     ylab = "Average Silhouettes")
-
-
-
 
 fviz_nbclust(t(driverexpression), kmeans, method = "silhouette")
 
@@ -296,7 +288,7 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4)
 
 ######PCA #####################################################################################
 
-drivergene <- 2 # determines which of the Drivermutations will be seen in the cluster at the x axis
+drivergene <- 4 # determines which of the Drivermutations will be seen in the cluster at the x axis
 dataset <- processed_data$expression # determines which dataset we use
 realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
 
@@ -305,7 +297,6 @@ colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(Z
 
 pca = prcomp(t(dataset), center = F, scale. = F)
 summary(pca)
-autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue')
 #zum Anzeigen von labels (Zelllinien)
 autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue', label = TRUE, label.size = 3)
 str(pca)
@@ -357,20 +348,22 @@ potSecondSitestop20 <- lapply(seq_along(potSecondSites), function (a){
 })
 names(potSecondSitestop20) <- driverGenes
 
+ggplot(data = melt(potSecondSitestop20)) +
+  (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
+  theme_bw(base_size = 7) + #format the size of the theme nicely
+  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
+        legend.title= element_blank(), #no title of the legend should be plotted
+        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
-potSecondSitestop20plot <- lapply(seq_along(potSecondSitestop20), function(a){
-  output <- ggplot(data = potSecondSitestop20[[a]]) +
-    (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
-    theme_bw(base_size = 7) + #format the size of the theme nicely
-    theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-          legend.direction="horizontal", #define the legend direction if one is there
-          plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
-          legend.title= element_blank(), #no title of the legend should be plotted
-          axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-          strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
-  return(output)
-})
+
+
+
+
 
 
 
@@ -379,6 +372,48 @@ potSecondSitestop20plot <- lapply(seq_along(potSecondSitestop20), function(a){
 ###################################################################################################
 #Part 5: Making a multiple linear regression (MLR)
 ###################################################################################################
+
+
+############################data##############
+a <- finalPlottingData$expression[,1:3]
+a <-a[,c(1,3,2)]
+copynumber <- finalPlottingData$copynumber[,2]
+kd.ceres <- finalPlottingData$kd.ceres[,2]
+kd.prob <- finalPlottingData$kd.prob[,2]
+
+MRegressionanalysis <- cbind(a,copynumber,kd.ceres,kd.prob)
+
+DriverexpressionTP53 <- c()
+
+for (i in 1:34) {
+  a <- 16970*i
+  c <- (16970* (i-1))+1
+  b <- samples[i]
+  DriverexpressionTP53[c:a] <- processed_data$expression["TP53",b]
+}
+
+MRegressionanalysis <- cbind(MRegressionanalysis,DriverexpressionTP53)
+##################################################################################
+
+# Splitting the dataset into the Training set and Test set
+set.seed(123) #initialize the random numbers
+split = sample.split(MRegressionanalysis$DriverexpressionTP53, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
+training_set = subset(MRegressionanalysis, split == TRUE) #use the labels to get the training data
+test_set = subset(MRegressionanalysis, split == FALSE) #dim(test_set) will give you know 10 --> 50/5*1 = 10; wuhu train/test split worked
+
+
+
+# Fitting Multiple Linear Regression to the Training set
+regressor = lm(formula = DriverexpressionTP53 ~ ., #predict profit based on ALL (=.) the input variables for one company 
+               data = training_set)
+
+# Predicting the Test set results
+y_pred = predict(regressor, newdata = test_set) #predict the profit based on your testing data (this data the model did NEVER see and highly usefull to evaluat the performance)
+test_set$Prediction = y_pred #add your predictions to the dataset
+test_set #Now you can compare your Predictions (last column) with the real values of the startups (2nd last column)
+
+
+cor.test(test_set$Profit, test_set$Prediction, method = "spearman")
 
 
 
