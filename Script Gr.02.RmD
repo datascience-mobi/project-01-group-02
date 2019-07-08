@@ -29,8 +29,6 @@ install.packages("factoextra")
 library(factoextra)
 install.packages("devtools")
 library(devtools)
-install.packages("ggbiplot")
-library(ggbiplot)
 ```
 
 Setting the sys-path
@@ -149,17 +147,20 @@ ggplot(data = finalPlottingData$expression, aes(x=Sample, y=Value)) +
         axis.title.x = element_blank(), 
         strip.text.y = element_text(angle = 90)) 
 ```
+#overview over our processed data -> outliers in every cellline, there are differences between the celllines which can be examined
+#boxplot mutation data nur wenige gene die viel mutieren weshalb es gut funktionieren sollte driver mutation zu definieren -> wenige die oft mutiert sind, stechen stark hervor
 
 creating a heatmap with the kd.ceres values -> not the whole matrix just the first ten genes and all the celllines, 
 #take care blue means really, really significant p-value!
 ```{r}
-pheatmap(as.matrix(processed_data$kd.ceres[1:10, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+pheatmap(as.matrix(processed_data$kd.ceres[1:50, 1:34]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
          main = paste0("kdCERES for potential 2nd site targets"),
          show_rownames = F, show_colnames = T,
          cutree_rows = 4,
          cutree_cols = 2, 
          fontsize_row=10) 
 ```
+#the knockout of the different genes influences the cells in different ways
 
 Creating a hierachical cluster with the celllines of the kd.ceres
 ```{r}
@@ -169,6 +170,7 @@ cor.hc = hclust(cor.dist, method = "ward.D2")
 cor.hc = as.dendrogram(cor.hc)
 plot(cor.hc, las = 2, cex.lab = 0.7)
 ```
+#wir hatten gehofft, dass sich die driver mutations zusammenclustern würden aber dies passiert nicht
 
 histogram, 
 #pick one gene, #pick one of the 34 mutation lists, #look how often an entry is is in the mutation list, #sum it up to get the total count for each gene, #rename it nicely, #make a nice dataframe, #sort the data frame
@@ -193,15 +195,13 @@ sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE]
 head(sortedGenCounts)
 ```
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 Plotting only the top 50 genes, 
 #format the size of the theme nicely, #define the legend position (here no leghend will be needed), #define the legend direction if one is there, make the title of the plot into the middle, #define the orientation of the text on the x-axis, #no title of the legend should be plotted, #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming, #define the orientation of the text of the y-axis
 ```{r}
 plotData <- sortedGenCounts[1:40, ,drop = FALSE]
 
 plotData$Gene <- rownames(plotData)
-
-plotData$Gene <- factor(plotData$Gene, levels = plotData$Value)
 
 ggplot(data = plotData) +
   (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
@@ -214,6 +214,7 @@ ggplot(data = plotData) +
         axis.title.x = element_blank(), 
         strip.text.y = element_text(angle = 90)) 
 ```
+#indentification of the outliers -> driver genes
 
 
 Part 3: Dimensionality reduction (PCA and kmeans)
@@ -261,6 +262,7 @@ plot(silhouette(km$cluster, D))
 mean(silhouette(km$cluster, D))
 a = silhouette(km$cluster, D)
 ```
+#clustert sich in zwei cluster nach der silhouette methode
 
 # function to compute average silhouette for k clusters
 ```{r}
@@ -321,6 +323,8 @@ str(pca)
 plot(pca, type = "l")
 ```
 
+## Ziel insgesamt dass sich die gene zusammen clustern -> je nach ausgang aussage treffen
+
 
 Part 4 statistical test
 #only use the TOP 10 driver genes, #pick one driver gene, #the kdCERES matrix is of interest take its' rownames as refrence, #pick a potetnial 2nd site target, #pick the driver mut data, #pick the 2nd site data, #make a spearman correlation, #return the p-values, #rename all, #get a nice dataframe, #rename the list of lists, #look at the nice data
@@ -358,7 +362,6 @@ potSecondSites <- lapply(potSecondSites, function(a){
 })
 ```
 
-!!!!!!!!!!!!!!!!!!!!!!!!!
 # selecting the 20 Genes out of every DriverGene List with the lowest p score, #format the size of the theme nicely, #define the legend position (here no leghend will be needed), #define the legend direction if one is there, #make the title of the plot into the middle, #define the orientation of the text on the x-axis, #no title of the legend should be plotted, #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming, #define the orientation of the text of the y-axis
 ```{r}
 potSecondSitestop20 <- lapply(seq_along(potSecondSites), function (a){
