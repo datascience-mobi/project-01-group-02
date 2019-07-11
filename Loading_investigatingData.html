@@ -443,7 +443,6 @@ allDepMapData_annotation_SkinCancer[1:5, 1:5]</code></pre>
 <pre class="r"><code>length(rownames(allDepMapData_annotation_SkinCancer))</code></pre>
 <pre><code>## [1] 34</code></pre>
 <pre class="r"><code>namescelllines = allDepMapData$annotation$DepMap_ID[which(allDepMapData$annotation$Primary.Disease == 'Skin Cancer')]</code></pre>
-<pre class="r"><code>allDepMap_Expression_SkinCancer =  allDepMapData$expression[ ,which(colnames(allDepMapData$expression) %in% namescelllines)]</code></pre>
 <div id="daten-mit-denen-wir-arbeiten-werden" class="section level2">
 <h2>Daten mit denen wir arbeiten werden</h2>
 <pre class="r"><code>namescelllines = allDepMapData$annotation$DepMap_ID[which(allDepMapData$annotation$Primary.Disease == 'Skin Cancer')]
@@ -457,23 +456,6 @@ allDepMap_annotation_SkinCancer =  allDepMapData$annotation[which(allDepMapData$
 
 save(file= &quot;C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS&quot;, list=&quot;allDepMap_annotation_SkinCancer&quot;, &quot;allDepMap_copynumber_SkinCancer&quot;, &quot;allDepMap_expression_SkinCancer&quot;, &quot;allDepMap_kd.ceres_SkinCancer&quot;, &quot;allDepMap_kd.prob_SkinCancer&quot;, &quot;allDepMap_mutation_SkinCancer&quot;)
 load(&quot;C:/Users/LeoTh/Documents/GitHub/project-01-group-02/CellCancerLines.RDS&quot;)</code></pre>
-</div>
-<div id="cleaning-the-dataset-form-uninformativeunimportant-columns-and-rows" class="section level2">
-<h2>Cleaning the dataset form uninformative/unimportant columns and rows</h2>
-<ul>
-<li>rownames(allDepMap_annotation_SkinCancer)= allDepMap_annotation_SkinCancer$DepMap_ID</li>
-<li>allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[ , -which(colnames(allDepMap_annotation_SkinCancer) %in% c(“DepMap_ID”, “Aliases”, “Gender”, “Source”)) ]</li>
-</ul>
-<p>Reordering of the rows:</p>
-<ul>
-<li>allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[c(1:13, 15:19, 21:26, 27:34, 14, 20, 27), ]</li>
-<li>allDepMap_annotation_SkinCancer = allDepMap_annotation_SkinCancer[c(1:20, 22:24, 31:34,21, 29,30,25:28), ] summary(allDepMap_annotation_SkinCancer)</li>
-</ul>
-<p>Making the data nominal:</p>
-<ul>
-<li>allDepMap_annotation_SkinCancer<span class="math inline">\(Subtype.Disease = factor(allDepMap_annotation_SkinCancer\)</span>Subtype.Disease)</li>
-<li>allDepMap_annotation_SkinCancer<span class="math inline">\(Primary.Disease = factor(allDepMap_annotation_SkinCancer\)</span>Primary.Disease) summary(allDepMap_annotation_SkinCancer)</li>
-</ul>
 </div>
 </div>
 
