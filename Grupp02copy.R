@@ -111,7 +111,6 @@ singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(allDepM
 
 geneCounts <- sapply(seq_along(singleGenes), function(a) {
   genePicker <- singleGenes[a] #pick one gene
-  print(paste0("I am doing: ", a))
   sumGene <- lapply(seq_along(allDepMap_mutation_SkinCancer), function(b) {
     mutPicker <- allDepMap_mutation_SkinCancer[[b]] #pick one of the 34 mutation lists
     out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) #look how often an entry is is in the mutation list
@@ -137,7 +136,7 @@ dataTopDriverGenes <- lapply(1:length(processed_data), function(a) { #pick the d
   return(output)
 })
 names(dataTopDriverGenes) <- names(dt_new)
-lapply(dataTopDriverGenes, head)
+
 
 #Extrac the data for epression and ceres
 driverexpression <- dataTopDriverGenes$expression
@@ -220,10 +219,6 @@ ggplot(data = plotData) +
         strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
 
-
-
-
-
 ###################################################################################################
 #Part 3: Making some kind of dimensionality reduction (PCA and kMeans)
 ###################################################################################################
@@ -249,8 +244,13 @@ colnames(dataset) <- realcelllinenames
 rm(drivergene, realcelllinenames, dataset)
 
 
+View(ZelllinesMutations)
+
+
 
 ##########################################kmeans#####################################################
+
+
 
 km = kmeans(x =t(driverexpression), centers = 6, nstart = 30)
 wss = sapply(1:11, function(k) {
@@ -361,60 +361,43 @@ ggplot(data = melt(potSecondSitestop20)) +
         strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
 
-
-
-
-
-
-
-
-
 ###################################################################################################
 #Part 5: Making a multiple linear regression (MLR)
 ###################################################################################################
+rm(a, cor.dist, D, driverGene, i , plotData, mut, finalPlottingData, ids, out, R_GC_MEM_GROW, root.dir, sample_case, samples, singleGenes, split, topDriverGenes, wss, x, allDepMap_mutation_SkinCancer, cor.hc, cor.mat, data, driverexpression, driverkd.ceres, dt_new, geneCounts, OneMatrix, pca, potSecondSites, potSecondSitestop20, sortedGenCounts)
+
+MRegressionanalysis <- t(processed_data$copynumber)[,1:16000]
+
+MRegressionanalysis <-as.data.frame(MRegressionanalysis)
+colnames(MRegressionanalysis) <- as.vector(colnames(MRegressionanalysis))
 
 
-############################data##############
-a <- finalPlottingData$expression[,1:3]
-a <-a[,c(1,3,2)]
-copynumber <- finalPlottingData$copynumber[,2]
-kd.ceres <- finalPlottingData$kd.ceres[,2]
-kd.prob <- finalPlottingData$kd.prob[,2]
 
-MRegressionanalysis <- cbind(a,copynumber,kd.ceres,kd.prob)
 
-DriverexpressionTP53 <- c()
 
-for (i in 1:34) {
-  a <- 16970*i
-  c <- (16970* (i-1))+1
-  b <- samples[i]
-  DriverexpressionTP53[c:a] <- processed_data$expression["TP53",b]
-}
-
-MRegressionanalysis <- cbind(MRegressionanalysis,DriverexpressionTP53)
 ##################################################################################
 
 # Splitting the dataset into the Training set and Test set
 set.seed(123) #initialize the random numbers
-split = sample.split(MRegressionanalysis$DriverexpressionTP53, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
+split = sample.split(MRegressionanalysis[,"A1BG"], SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
 training_set = subset(MRegressionanalysis, split == TRUE) #use the labels to get the training data
 test_set = subset(MRegressionanalysis, split == FALSE) #dim(test_set) will give you know 10 --> 50/5*1 = 10; wuhu train/test split worked
 
 
 
 # Fitting Multiple Linear Regression to the Training set
-regressor = lm(formula = DriverexpressionTP53 ~ ., #predict profit based on ALL (=.) the input variables for one company 
-               data = training_set)
+regressor = lm(A1BG ~. , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+
+
+
 
 # Predicting the Test set results
-y_pred = predict(regressor, newdata = test_set) #predict the profit based on your testing data (this data the model did NEVER see and highly usefull to evaluat the performance)
+y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the profit based on your testing data (this data the model did NEVER see and highly usefull to evaluat the performance)
 test_set$Prediction = y_pred #add your predictions to the dataset
 test_set #Now you can compare your Predictions (last column) with the real values of the startups (2nd last column)
 
+cor.test(test_set$A1BG, test_set$Prediction, method = "spearman")
 
-cor.test(test_set$Profit, test_set$Prediction, method = "spearman")
+y_pred$fit
 
-
-
-sessionInfo() #finally done:)
+sessionInfo() #finally done:) 
