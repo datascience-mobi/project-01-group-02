@@ -100,7 +100,7 @@ finalPlottingData <- lapply(1:(length(processed_data)-1), function(a) { #take ca
   return(out)
 })
 names(finalPlottingData) <- names(processed_data)[1:(length(processed_data)-1)] #rename the data 
-lapply(finalPlottingData, head)
+
 
 
 
@@ -119,13 +119,13 @@ geneCounts <- sapply(seq_along(singleGenes), function(a) {
   geneCount <- colSums(as.data.frame(rbindlist(sumGene))) #sum it up to get the total count for each gene
   return(geneCount)
 })
-names(geneCounts) <- singleGenes #rename it nicely
+names(geneCounts) <- singleGenes #rename 
 geneCounts <- as.data.frame(geneCounts) #make a nice dataframe
 colnames(geneCounts) <- c("Value")
 sortedGenCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
-head(sortedGenCounts) #be amazed
+head(sortedGenCounts) 
 
-#Extact the data for the top 40
+#Extact the data for the top 10
 
 plotData <- sortedGenCounts[1:10, ,drop = FALSE]
 topDriverGenes <- rownames(plotData)
@@ -155,6 +155,11 @@ for (i in c(1:34)) {
 
 ZelllinesMutations <- OneMatrix[which(OneMatrix$Hugo_Symbol %in% topDriverGenes ),]
 ZelllinesMutations <- cbind(ZelllinesMutations$Hugo_Symbol, ZelllinesMutations$DepMap_ID)
+rm(OneMatrix)
+
+# manually entering the Drivermutations of every Zelline
+Zelllineswithdrivermutation <- unique(ZelllinesMutations[,2])
+driverMutationsofZelllines <- c("COL11A1,TMTC2,TTN", " HMCN1", "COL11A1,HMCN1,SLC510", "HMCN1,TMTC2", "COL11A1,TP53,TTN","none","ZNF292","RYR2","HMCN" ,"none2","none3", "TP53, TTN","HMCN1", "TTN,ZNF292","TMTC2,TP53,NEB","TP53", "TMTC2,NEB","none4","TMTC2,TTN,ZNF292", "none5","CACNA1I","HMCN1,TP53,ZNF292","none6","none7","HMCN1,TMTC2,ZNF292","RYR2,TMTC2,NEB","RYR2,NEB,TTN,CACNA1I","HMCM1,TP53","TTN","COL11A1,SLC5A10","COL11A1,CACNA1I","TTN,CACNA1I","RYR2,CACNA1I,ZNF292","TP53,TTN,CACNA1I" )
 
 
 ###################################################################################################
@@ -199,7 +204,7 @@ ggplot(data = geneCounts, aes(x="Mutations per Gene", y=Value)) +
         axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
         strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
 
-#Plot only the top 50 genes
+#Plot only the top 10 genes
 
 
 plotData <- sortedGenCounts[1:10, ,drop = FALSE]
@@ -228,63 +233,70 @@ ggplot(data = plotData) +
 
 
 
-drivergene <- 4 # determines which of the Drivermutations will be seen in the cluster at the x axis
-dataset <- processed_data$kd.ceres # determines which dataset we use
-realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
+drivergene <- 3 # determines which of the Drivermutations will be seen in the cluster at the x axis
+dataset <- processed_data$expression # determines which dataset we use
+#realcelllinenames <- colnames(processed_data$copynumber) # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
 
 colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
+colnames(dataset) <- driverMutationsofZelllines
 
 cor.mat = cor(dataset[1:50,], method = "spearman")
 cor.dist = as.dist(1 - cor.mat)
 cor.hc = hclust(cor.dist, method = "ward.D2")
 cor.hc = as.dendrogram(cor.hc)
-plot(cor.hc, las = 2, cex.lab = 0.7)
+plot(cor.hc, las = 2, cex.lab = 2, main = "Clustering of the expression values of all Zelllines")
+#wie bekomme ich es hin das man die ganzen Namen sieht ?
 
 colnames(dataset) <- realcelllinenames
 rm(drivergene, realcelllinenames, dataset)
 
 
-View(ZelllinesMutations)
-
 
 
 ##########################################kmeans#####################################################
 
+dataset <- t(processed_data$expression) # determines which dataset we use
+rownames(dataset) <- driverMutationsofZelllines
+
+dataset <- dataset[,-which(apply(dataset, 2, function(x) {
+  var(x)
+}) == 0)]
 
 
-km = kmeans(x =t(driverexpression), centers = 6, nstart = 30)
-wss = sapply(1:11, function(k) {
-  kmeans(x = t(driverexpression), centers = k)$tot.withinss
+km = kmeans(x =dataset, centers = 6, nstart = 30)
+wss = sapply(1:9, function(k) {
+  kmeans(x = dataset, centers = k)$tot.withinss
 })
-plot(1:11, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Total within-clusters sum of squares")
+plot(1:9, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Total within-clusters sum of squares")
 
-D = dist(t(driverexpression))
-plot(silhouette(km$cluster, D))
+ 
+plot(silhouette(km$cluster,dist(dataset)))
 
 # function to compute average silhouette for k clusters
-avg_sil <- function(k) {
-  km.res <- kmeans(t(driverexpression), centers = k, nstart = 25)
-  ss <- silhouette(km.res$cluster, dist(t(driverexpression)))
-  mean(ss[, 3])
-}
+#avg_sil <- function(k) {
+ # km.res <- kmeans(dataset, centers = k, nstart = 25)
+  #ss <- silhouette(km.res$cluster, dist(dataset))
+#  mean(ss[, 3])
+#}
 
-fviz_nbclust(t(driverexpression), kmeans, method = "silhouette")
 
-km2 <- kmeans(t(driverexpression), centers = 2, nstart = 25)
-km3 <- kmeans(t(driverexpression), centers = 6, nstart = 25)
-km4 <- kmeans(t(driverexpression), centers = 4, nstart = 25)
-km5 <- kmeans(t(driverexpression), centers = 9, nstart = 25)
+fviz_nbclust(dataset, kmeans, method = "silhouette")
 
-# plots to compare
-p1 <- fviz_cluster(km2, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 2")
-p2 <- fviz_cluster(km3, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 6")
-p3 <- fviz_cluster(km4, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 4")
-p4 <- fviz_cluster(km5, geom = "text", labelsize = 8, data = t(driverexpression)) + ggtitle("k = 9")
+km2 <- kmeans(dataset, centers = 2, nstart = 25)
+km3 <- kmeans(dataset, centers = 5, nstart = 25)
+km4 <- kmeans(dataset, centers = 4, nstart = 25)
+km5 <- kmeans(dataset, centers = 9, nstart = 25)
 
+p1 <- fviz_cluster(km2,geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 2")
+p2 <- fviz_cluster(km3, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 5")
+p3 <- fviz_cluster(km4, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 9")
 
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 
-rm(km,km2,km3,km4,km5,p1,p2,p3,p4)
+plot(p2)
+
+rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset)
 
 ######PCA #####################################################################################
 
@@ -292,18 +304,21 @@ drivergene <- 4 # determines which of the Drivermutations will be seen in the cl
 dataset <- processed_data$expression # determines which dataset we use
 realcelllinenames <- processed_data$copynumber # is just defined so we can switch the colnames back so that they are showing the celllines after the clustering
 
-colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
-
+#colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
+colnames(dataset)<- driverMutationsofZelllines
 
 pca = prcomp(t(dataset), center = F, scale. = F)
 summary(pca)
 #zum Anzeigen von labels (Zelllinien)
-autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue', label = TRUE, label.size = 3)
+autoplot(prcomp(t(dataset)), data = t(dataset), colour = 'blue',  label = TRUE,  label.size = 3)
 str(pca)
 plot(pca, type = "l")
 
+
 colnames(dataset) <- realcelllinenames
 rm(drivergene, realcelllinenames, dataset)
+
+
 
 ###################################################################################################
 #Part 4: Making a statistical test
