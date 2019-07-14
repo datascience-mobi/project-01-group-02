@@ -2,6 +2,7 @@
 
 #Importing the libs
 library(ggplot2)
+library(relaimpo)
 library(factoextra)
 library(gridExtra)
 library(reshape2)
@@ -185,7 +186,7 @@ rm(OneMatrix, Genes, ZelllinesMutations, Zelllines,i)
 ############################ HEATMAP with the knock down data ################################################
 
 
-pheatmap(as.matrix(processed_data$kd.ceres[1:100,]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+pheatmap(as.matrix(processed_data$kd.ceres[1:50,]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
          main = paste0("kdCERES for potential 2nd site targets"),
          show_rownames = F, show_colnames = T,
          cutree_rows = 4,
@@ -476,6 +477,10 @@ rm(potSecondSites, ttestgenes)
 ###################################################################################################
 #Part 5: Making a multiple linear regression (MLR)
 ###################################################################################################
+
+### Predicting the expression of our Drivergenes with all the data #############
+
+#First creating the dataframe for the multiple linear Regression with all the dataframes as Columns and the rows are every gene in every Cell line
 a <- generalPlottingData$expression[,1:3]
 a <-a[,c(1,3,2)]
 copynumber <- generalPlottingData$copynumber[,2]
@@ -484,6 +489,10 @@ kd.prob <- generalPlottingData$kd.prob[,2]
 
 RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
 
+# doing the multiple linear Regression 
+# then comparint the predicted values of our model with the real values 
+#of the test_data by spearman correlaiton
+# doing this for every Driver Gene
 
 Regressionanalysis <-lapply(1:10, function(x){
   RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
@@ -501,20 +510,53 @@ Regressionanalysis <-lapply(1:10, function(x){
   set.seed(123) #initialize the random numbers
   split = sample.split(RegData, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
   training_set = subset(RegData, split == TRUE) #use the labels to get the training data
-  test_set = subset(RegData, split == FALSE) #dim(test_set) will give you know 10 --> 50/5*1 = 10; wuhu train/test split worked
+  test_set = subset(RegData, split == FALSE) 
   rm(RegData)
   # Fitting Multiple Linear Regression to the Training set
   regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+  return(regressor)
   # Predicting the Test set results
-  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the profit based on your testing data (this data the model did NEVER see and highly usefull to evaluat the performance)
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
   test_set$Prediction = y_pred$fit #add your predictions to the dataset
-  #Now you can compare your Predictions (last column) with the real values of the startups (2nd last column)
+  #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
   Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
   return(Results)
 })
 names(Regressionanalysis) <- rownames(geneCounts)[1:10]
 Regressionanalysis <- as.vector(Regressionanalysis)
 rm(RegData,kd.ceres,kd.prob,copynumber,a)
+
+
+
+
+######## Predicting the Expression of the Drivermutations with the expression of the other genes ########
+
+dataset <- t(processed_data$expression)
+
+#dataset <- dataset[-which(apply(dataset, 1, function(x) {
+#  var(x)
+#}) == 0),]
+dataset <- as.data.frame(dataset)
+
+
+
+set.seed(123) #initialize the random numbers
+split = sample.split(dataset, SplitRatio = 0.5) #split the dataset into 4/5 Training and 1/5 Testing dataset
+training_set = subset(dataset, split == TRUE) #use the labels to get the training data
+test_set = subset(dataset, split == FALSE) 
+rm(dataset)
+
+
+# Fitting Multiple Linear Regression to the Training set
+regressor = lm(TP53 ~ ., data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+
+# Predicting the Test set results
+y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
+test_set$Prediction = y_pred$fit #add your predictions to the dataset
+#Now compare the Predictions (last column) with the real values of the startups (2nd last column)
+Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
+
+
 
 
 
