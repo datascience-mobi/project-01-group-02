@@ -411,7 +411,7 @@ ggplot(data = top100var.contrib) +
 # these are the Components which are contributing the most to our variation in the data 
 # may be we will find some of these in our result of the p-test 
 
-rm(top100var.contrib, drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var.contrib, var.coord, var.cos2, comp.cos2, sdev)
+rm( drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var.contrib, var.coord, var.cos2, comp.cos2, sdev)
    
 
 
@@ -491,7 +491,7 @@ RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
 
 # doing the multiple linear Regression 
 # then comparint the predicted values of our model with the real values 
-#of the test_data by spearman correlaiton
+# of the test_data by spearman correlaiton
 # doing this for every Driver Gene
 
 Regressionanalysis <-lapply(1:10, function(x){
@@ -514,7 +514,6 @@ Regressionanalysis <-lapply(1:10, function(x){
   rm(RegData)
   # Fitting Multiple Linear Regression to the Training set
   regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
-  return(regressor)
   # Predicting the Test set results
   y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
   test_set$Prediction = y_pred$fit #add your predictions to the dataset
@@ -527,34 +526,133 @@ Regressionanalysis <- as.vector(Regressionanalysis)
 rm(RegData,kd.ceres,kd.prob,copynumber,a)
 
 
+ResultsRegression <- melt(lapply(1:length(Regressionanalysis), function(x){
+  return(Regressionanalysis[[x]][3])
+}))
+ResultsRegression <- cbind(ResultsRegression,melt(lapply(1:length(Regressionanalysis), function(x){
+  return(Regressionanalysis[[x]][1])
+})))
+
+ResultsRegression$L2 <- rownames(geneCounts)[1:10]
+ResultsRegression <- ResultsRegression [,c(2,1,4)]
+colnames(ResultsRegression) <- c("DriverGene", "pvalue", "Svalue" )
+
+print(ResultsRegression)
+
+# with these low p-values we can say with confidence that our Model is able to reproduce and predict 
+# the Expressionvalues of our drivergenes 
+
+# using just our top 20 out of the statistical testing we hoped to see that the p values would not increase that much 
+# this would verify our these that these genes are the essential components which drive the differnet expression of the Driver Gene 
+# as you can see below this ist not the case and the p values are very much increased
+
+Regressionanalysistop20 <-lapply(1:10, function(x){
+  a <- generalPlottingData$expression[which(generalPlottingData$expression[,3] %in% as.character(potSecondSitestop20[[x]][,2])),1:3]
+  a <-a[,c(1,3,2)]
+  copynumber <- generalPlottingData$copynumber[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  kd.ceres <- generalPlottingData$kd.ceres[which(generalPlottingData$kd.ceres[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  kd.prob <- generalPlottingData$kd.prob[which(generalPlottingData$kd.prob[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
+  h <- length(generalPlottingData$expression[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2])
+  Driverexpression <- c()
+  for (i in 1:34) {
+    a <- h*i
+    c <- (h* (i-1))+1
+    b <- colnames(processed_data$expression)[i]
+    Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[x],b]
+  }
+  print(paste0("I am doing driver mut: ", rownames(geneCounts)[x]))
+  RegData <- cbind(RegData,Driverexpression)
+  RegData <-as.data.frame(RegData)
+  colnames(RegData) <- as.vector(colnames(RegData))
+  set.seed(123) #initialize the random numbers
+  split = sample.split(RegData, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
+  training_set = subset(RegData, split == TRUE) #use the labels to get the training data
+  test_set = subset(RegData, split == FALSE) 
+  rm(RegData)
+  # Fitting Multiple Linear Regression to the Training set
+  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+  # Predicting the Test set results
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
+  test_set$Prediction = y_pred$fit #add your predictions to the dataset
+  #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
+  Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
+  return(Results)
+})
+names(Regressionanalysistop20) <- rownames(geneCounts)[1:10]
+Regressionanalysistop20 <- as.vector(Regressionanalysistop20)
+
+ResultsRegressiontop20 <- melt(lapply(1:length(Regressionanalysistop20), function(x){
+  return(Regressionanalysistop20[[x]][3])
+}))
+ResultsRegressiontop20 <- cbind(ResultsRegressiontop20,melt(lapply(1:length(Regressionanalysistop20), function(x){
+  return(Regressionanalysistop20[[x]][1])
+})))
+
+ResultsRegressiontop20$L2 <- rownames(geneCounts)[1:10]
+ResultsRegressiontop20 <- ResultsRegressiontop20 [,c(2,1,4)]
+colnames(ResultsRegressiontop20) <- c("DriverGene", "pvalue", "Svalue" )
+
+print(ResultsRegressiontop20)
+
+# so with this result we can not define confidently the secound targets
+
+
+
+####################################################################################################
+# RESULTS
+############################################################################################
+
+
+Resultspresentation <- lapply(1:length(potSecondSitestop20), function(x){
+  return(potSecondSitestop20[[x]][2])
+})
+
+names(Resultspresentation) <- rownames(geneCounts)[1:10]
+print(Resultspresentation)
+
+print(top100var.contrib[1:20,2])
+
+which(top100var.contrib[1:20,2] %in% as.character(melt(Resultspresentation)[,1]))
+
+
+# the 2nd targets from the pca and the regression are not the same like we have wished (due to the data or mistakes in the skript)
+# although the kmeans and the pca doesnt redrocude the same 2nd side targets we present as
+# our results the 20top 2nd site genes from our p-test 
+# this regressionmodel shows a really low p-value at which grounds we conclude that following gens 
+# should be taken in account as targets for drug development in skin cancer 
+
+
+
 
 
 ######## Predicting the Expression of the Drivermutations with the expression of the other genes ########
 
-dataset <- t(processed_data$expression)
 
-#dataset <- dataset[-which(apply(dataset, 1, function(x) {
-#  var(x)
-#}) == 0),]
-dataset <- as.data.frame(dataset)
+# we also wanted to do another Regression model on just the expression data with the so that the coeffizients of the 
+# analysis would tell us how improtant each gene is for the model, but this regression does not work and we doesnt know why 
+# maybe you can take a look and help us 
+#dataset <- t(processed_data$expression)
+
+#dataset <- as.data.frame(dataset)
 
 
 
-set.seed(123) #initialize the random numbers
-split = sample.split(dataset, SplitRatio = 0.5) #split the dataset into 4/5 Training and 1/5 Testing dataset
-training_set = subset(dataset, split == TRUE) #use the labels to get the training data
-test_set = subset(dataset, split == FALSE) 
-rm(dataset)
+#set.seed(123) #initialize the random numbers
+#split = sample.split(dataset, SplitRatio = 0.5) #split the dataset into 4/5 Training and 1/5 Testing dataset
+#training_set = subset(dataset, split == TRUE) #use the labels to get the training data
+#test_set = subset(dataset, split == FALSE) 
+#rm(dataset)
 
 
 # Fitting Multiple Linear Regression to the Training set
-regressor = lm(TP53 ~ ., data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+# regressor = lm(TP53 ~ ., data = training_set) #predict profit based on ALL (=.) the input variables for one company 
 
 # Predicting the Test set results
-y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
-test_set$Prediction = y_pred$fit #add your predictions to the dataset
+# y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
+# test_set$Prediction = y_pred$fit #add your predictions to the dataset
 #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
-Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
+# Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
 
 
 
