@@ -1,11 +1,11 @@
 ---
-title: "Group 02_Skin Cancer"
+title: "Group 02 - Skin Cancer"
 author: "Leonie Thomas, Isabel Potthof, Elif Tosun and Marlene Khin"
 date: "24.07.2019"
 output:
-  word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 ---
 #  <span style="color:orange">**Preparations**</span>
 
@@ -44,13 +44,7 @@ data = readRDS(paste0(root.dir, "/DepMap19Q1_allData.RDS"))
 ## 3. Loading the data set:
 ```{r}
 data = readRDS("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/DepMap19Q1_allData.RDS")
-data$expression[1:10,1:5]
-data$copynumber[1:10,1:5]
-data$kd.ceres[1:10,1:5]
-data$kd.prob[1:10,1:5]
-data$annotation[1:10,1:5]
-data$mutation$`ACH-000004`[1:10,1:5]
-
+lapply(data,head)
 ```
 
 
@@ -69,8 +63,8 @@ Additionally to the mutation matrix another matrix is needed containing all matr
 dt_new <- lapply(which(names(data) %!in% "mutation"), function(a) data[[a]]) # extracting the non-mutation data 
 names(dt_new) <- names(data)[which(names(data) %!in% "mutation")] # renaming the data with the original names
 #our data now consists out of 2 lists 
-names(dt_new)
-head(mut[[1]])#just picking one cell line as an example
+print(names(dt_new))
+print(head(mut[[1]]))#just picking one cell line as an example
 ```
 The next step is to extract the cell lines of the skin cancer. For that we need to get to know the names of the cell lines from the skin cancer, this information we can get out of the annotation dataframe. Then we can create a new dataframe which only contains the data we will work with.
 
@@ -102,12 +96,7 @@ processed_data <- lapply(1:length(dt_new), function(a) { # picking the data for 
 names(processed_data) <- names(dt_new) # renameing the objects according to the original data
 rm(dt_new,sample_case) # removing objects which are not need anymore
 #taking a look at the data: 
-processed_data$expression[1:10,1:5]
-processed_data$copynumber[1:10,1:5]
-processed_data$kd.ceres[1:10,1:5]
-processed_data$kd.prob[1:10,1:5]
-processed_data$annotation[1:10,1:5]
-processed_data$mutation$`ACH-000004`[1:10,1:5]
+lapply(processed_data, head)
 ```
 
 Extracting the previously defined cell lines from the mutation data.
@@ -159,12 +148,7 @@ rm(i,out, Genenames,x, allDepMap_annotation_SkinCancer, samples, allDepMap_mutat
 
 Looking at the processed data
 ```{r}
-processed_data$expression[1:10,1:5]
-processed_data$copynumber[1:10,1:5]
-processed_data$kd.ceres[1:10,1:5]
-processed_data$kd.prob[1:10,1:5]
-processed_data$annotation[1:10,1:5]
-processed_data$mutation$`ACH-000004`[1:10,1:5]
+lapply(processed_data, head)
 ```
 
 # <span style="color:orange">**Part 2: Data vizualisation**</span>  
@@ -463,10 +447,10 @@ p4 <- fviz_cluster(km5, geom = "point", data = dataset) + ggtitle("k = 10")
 
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 
-p4 <- fviz_cluster(km5, geom = "text", labelsize = 9, data = dataset) + ggtitle("k = 10")
+p4 <- fviz_cluster(km5, geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 10")
 plot(p4) # clustering with 10 centers does not conclude in clusters with the same driver mutations
 # having more than one driver mutation in most cell lines may cause this
-p1 <- fviz_cluster(km2,geom = "text", labelsize = 9, data = dataset) + ggtitle("k = 2")
+p1 <- fviz_cluster(km2,geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 2")
 plot(p1) 
 
 rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
