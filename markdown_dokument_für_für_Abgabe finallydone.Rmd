@@ -3,13 +3,13 @@ title: "Group 02 - Skin Cancer"
 author: "Leonie Thomas, Isabel Potthof, Elif Tosun and Marlene Khin"
 date: "24.07.2019"
 output:
-  word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 ---
 #  <span style="color:orange">**Preparations**</span>
 
-## 1.Load following packages:
+## 1.Loading following packages:
 ```{r message=FALSE, warning=FALSE}
 library(ggplot2)
 library(relaimpo)
@@ -35,15 +35,15 @@ library(caTools)
 ```
 
 ## (2. Setting the sys-path and loading the data)
-We used the sys-path to work in R, but markdown could not knit it so we loadet the dataset for the markdown like explained in point 3.
+The sys-path was used in R, but markdown could not knit it so the data was loaded as explained in step 3.
 ```{r eval = FALSE} 
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
 data = readRDS(paste0(root.dir, "/DepMap19Q1_allData.RDS"))
 ```
 
-## 3. Loading the dataset:
+## 3. Loading the data set:
 ```{r}
-data = readRDS("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/DepMap19Q1_allData.RDS")
+data = readRDS("C:/Users/Isip/Documents/Project 2/DepMap19Q1_allData.RDS")
 
 ```
 
@@ -52,47 +52,48 @@ data = readRDS("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/DepMap19Q1_a
 
 ## <span style="color:orange">**1.1 Extracting and splitting our data**</span>   
   
-The mutation data is different from the other matrices, so we define a new matrix only containing the mutation dat. 
+Defining a new matrix only containing the mutation data which is structured differently from the other matrices.  
 ```{r}
 mut <- data$mutation 
 ```
   
-Additionally to the mutation matrix we want another matrix only containing all data exept the mutation data.
+Additionally to the mutation matrix another matrix is needed containing all matrices except the mutation data.
 ```{r}
-'%!in%' <- function(x,y)!('%in%'(x,y))  #We define an operator that will only pick the data that is NOT defined in the list; so the data that needs to be excluded
-dt_new <- lapply(which(names(data) %!in% "mutation"), function(a) data[[a]]) #extracting the non-mutation data 
-names(dt_new) <- names(data)[which(names(data) %!in% "mutation")] #rename the data with the original names
+'%!in%' <- function(x,y)!('%in%'(x,y))  # defining an operator that will only pick the data that is NOT defined in the list; so the data that needs to be excluded
+dt_new <- lapply(which(names(data) %!in% "mutation"), function(a) data[[a]]) # extracting the non-mutation data 
+names(dt_new) <- names(data)[which(names(data) %!in% "mutation")] # renaming the data with the original names
 ```
   
-Defining which samples we will take out of the  original dataset
+Defining which samples will be taken out of the original dataset
 ```{r}
 sample_case = c("Skin Cancer") 
 ``` 
 
-We look at the annotation matrix and search only for the Primary diseases which match the previous defined sample_case. 
-We are looking at the column which tells us to which cancer type this cell line belongs and only taking the cell lines for which the sample case ist true. We are getting a vector of all the cell line names we want to look at
+Looking at the annotation matrix and searching only for the primary diseases matching the previous defined sample_case. 
+A vector containing all the cell lines with skin cancer as the primary disease is obtained.
 ```{r}
 samples = data$annotation$DepMap_ID[which(data$annotation$Primary.Disease == sample_case)]
 ```
+34 cell lines have the primary disease skin cancer.
 
-We extract all cell lines we defined in the previous step out of our data (except the mutation matrix)
+Extracting all cell lines defined in the previous step out of the data (except the mutation matrix).
 ```{r}
-processed_data <- lapply(1:length(dt_new), function(a) { #picking the data for our sample 
-  dat_picker <- dt_new[[a]] #picking one file at each iteration 
+processed_data <- lapply(1:length(dt_new), function(a) { # picking the data for our sample 
+  dat_picker <- dt_new[[a]] # picking one file at each iteration 
   if(names(dt_new[a])== "annotation"){ # treating the annotations differnetly because the cell line names are in a colum and are not the columnames like in the other matrices
     output <- dat_picker[which(dat_picker[,1] %in% samples),]
   } else {
   output <- dat_picker[,which(colnames(dat_picker) %in% samples)]# only taking the skin cancer cell lines 
   output <- output[complete.cases(output),] # only taking rows without NAs 
-  output <- output[order(rownames(output)),] # reordering the Genes acording to their name
+  output <- output[order(rownames(output)),] # reordering the genes according to their name
   }
   return(output)
 })
-names(processed_data) <- names(dt_new) # rename the objects according to the original data
-rm(dt_new,sample_case) # remove objects we don`t need anymore
+names(processed_data) <- names(dt_new) # renameing the objects according to the original data
+rm(dt_new,sample_case) # removing objects which are not need anymore
 ```
 
-Now we extract our cellines from the mutation data.
+Extracting the previously defined cell lines from the mutation data.
 ```{r}
 ids = which(names(mut) %in% samples) 
 allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
@@ -108,16 +109,16 @@ allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {
 names(allDepMap_mutation_SkinCancer) <- samples
 ```
 
-Losing all the genes which are not in every data frame. 
-First we need to pick all Gene names we have out of our data.
+Losing all genes which are not in every data frame. 
+First, all gene names have to be picked out of the data.
 ```{r}
 Genenames <- unique(c(rownames(processed_data[[1]]),rownames(processed_data[[2]]),rownames(processed_data[[3]]),rownames(processed_data[[4]])))
 ```
 
-Then we pick these genes which are in all 4 dataframes we need for further analysis.
+Then picking these genes which are in all 4 data frames which are needed for further analysis. 
 ```{r}
 i <- 1
-out <- vector("character", length(seq_along(1:16970)))
+out <- vector("character", length(seq_along(1:16970)))# length of the matrix 
 for (x in seq_along(Genenames)) {
   if(Genenames[x] %in% rownames(processed_data$expression) & Genenames[x] %in% rownames(processed_data$copynumber) & Genenames[x] %in% rownames(processed_data$kd.ceres) & Genenames[x] %in% rownames(processed_data$kd.prob))
   {out[i] <- Genenames[x]
@@ -139,6 +140,10 @@ rm(i,out, Genenames,x, allDepMap_annotation_SkinCancer, samples, allDepMap_mutat
 
 ```
 
+Looking at the processed data
+```{r}
+lapply(processed_data, head)
+```
 
 # <span style="color:orange">**Part 2: Data vizualisation**</span>  
 
@@ -146,52 +151,52 @@ rm(i,out, Genenames,x, allDepMap_annotation_SkinCancer, samples, allDepMap_mutat
 
 ### <span style="color:orange">**2.1.1 Extracting our data for plotting**</span>
 
-We will not need all our data for plotting so we have to prepare our data for the following plots.
+Not all the data is needed for plotting so the data is prepared for the following plots.
 ```{r}
-generalPlottingData <- lapply(1:(length(processed_data)-2), function(a) { # we will not need annotation
+generalPlottingData <- lapply(1:(length(processed_data)-2), function(a) { # the annotation matrix is not needed
   dtPicker <- processed_data[[a]]
-  out <- melt(dtPicker) #bind the data togehter that we have samples and values as columns
-  out$Gene <- rep(rownames(dtPicker), ncol(dtPicker)) #add the genes; probably this might be useful in a later stage
-  out$Case <- names(processed_data)[1:(length(processed_data)-1)][a] #add a labelling column
-  colnames(out) <- c("Sample", "Value", "Gene", "Case") #rename the columns
+  out <- melt(dtPicker) # binding the data togehter that it has samples and values as columns
+  out$Gene <- rep(rownames(dtPicker), ncol(dtPicker)) # adding the genes; probably this might be useful in a later stage
+  out$Case <- names(processed_data)[1:(length(processed_data)-1)][a]# adding a labelling column
+  colnames(out) <- c("Sample", "Value", "Gene", "Case") # renameing the columns
   return(out)
 })
-names(generalPlottingData) <- names(processed_data)[1:(length(processed_data)-2)] #rename the data 
+names(generalPlottingData) <- names(processed_data)[1:(length(processed_data)-2)] # renameing the data 
 ```
 
 
 ### <span style="color:orange">**2.1.2 Plotting Data - Driver Mutations**</span>
 
-Producing a vector which encompases every gene which at least mutated once.
+Producing a vector encompasing every gene which at least mutated once.
 ```{r}
 singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(processed_data$mutation), function(a) {
   out <- as.data.frame(as.vector(unique(processed_data$mutation[[a]]$Hugo_Symbol)))}))))[,1])
 ```
 
-Creating a dataframe which contains how often every gene is mutated.
+Creating a data frame containing the mutation rate of every gene.
 ```{r}
 geneCounts <- sapply(seq_along(singleGenes), function(a) {
-  genePicker <- singleGenes[a] #pick one gene
+  genePicker <- singleGenes[a] # picking one gene
   sumGene <- lapply(seq_along(processed_data$mutation), function(b) {
-    mutPicker <- processed_data$mutation[[b]] #pick one of the 34 mutation lists
-    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) #look how often an entry is in the mutation list
+    mutPicker <- processed_data$mutation[[b]] # picking one of the 34 mutation lists
+    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) # looking how often an entry is in the mutation list
     return(out)
   })
-  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) #sum it up to get the total count for each gene
+  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) # summing it up to get the total count for each gene
   return(geneCount)
 })
-names(geneCounts) <- singleGenes #rename 
-geneCounts <- as.data.frame(geneCounts) #make a nice dataframe
+names(geneCounts) <- singleGenes # renameing 
+geneCounts <- as.data.frame(geneCounts) # creating a nice data frame
 colnames(geneCounts) <- c("Value")
-geneCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] #sort the data frame
+geneCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] # sorting the data frame
 head(geneCounts) 
 ```
 
-Extacting the data for the top 10 which will be our driver mutations in our further investigation.
+Extacting the data for the top 10 which will be our driver mutations in the further investigation.
 ```{r}
-dataTopDriverGenes <- lapply(1:(length(processed_data)-2), function(a) { #picking the data for our sample 
-  dat_picker <- processed_data[[a]] #pick one file at each iteration 
-  output <- dat_picker[which(rownames(dat_picker) %in% rownames(geneCounts)[1:10]),] # compare the rownames of the picked data with the names of the 10 most mutated genes
+dataTopDriverGenes <- lapply(1:(length(processed_data)-2), function(a) { # picking the data for our sample 
+  dat_picker <- processed_data[[a]] # picking one file at each iteration 
+  output <- dat_picker[which(rownames(dat_picker) %in% rownames(geneCounts)[1:10]),] # comparing the rownames of the picked data with the names of the 10 most mutated genes
   return(output)
 })
 names(dataTopDriverGenes) <- names(processed_data)[1:4]
@@ -202,39 +207,39 @@ rm(singleGenes)
 
 ### <span style="color:orange">**2.1.3 Extracting the drivermutations for every Celline**</span>
 
-Putting all mutation data in one Matrix 
+Putting all mutation data in one matrix. 
 ```{r}
-OneMatrix <- data.frame()
-for (i in c(1:34)) {
-  OneMatrix <- rbind(OneMatrix,processed_data$mutation[[i]][,Hugo_Symbol:DepMap_ID])
+oneMatrix <- data.frame()
+for (i in c(1:34)) { # 34 are the cell lines of interest
+  oneMatrix <- rbind(oneMatrix,processed_data$mutation[[i]][,Hugo_Symbol:DepMap_ID])
 }
 ```
 
-Extracting just the column of the Gene name and the cell line
+Extracting just the column of the gene name and the cell line.
 ```{r}
-CelllinesMutations <- OneMatrix[which(OneMatrix$Hugo_Symbol %in% rownames(geneCounts)[1:10] ),]
-CelllinesMutations <- cbind(CelllinesMutations$Hugo_Symbol, CelllinesMutations$DepMap_ID)
+celllinesMutations <- oneMatrix[which(oneMatrix$Hugo_Symbol %in% rownames(geneCounts)[1:10] ),]
+celllinesMutations <- cbind(celllinesMutations$Hugo_Symbol, celllinesMutations$DepMap_ID)
 ```
 
-Extracting the drivermuations for every cell line out of the dataframe and putting it into another dataframe so it can be used for the plotting
+Extracting the drivermuations for every cell line out of the data frame and putting it into another data frame so it can be used for plotting.
 ```{r}
 Genes <- c("COL11A1,TMTC2,TTN", " HMCN1", "COL11A1,HMCN1,SLC510", "HMCN1,TMTC2", "COL11A1,TP53,TTN","none","ZNF292","RYR2","HMCN" ,"none2","none3", "TP53, TTN","HMCN1", "TTN,ZNF292","TMTC2,TP53,NEB","TP53", "TMTC2,NEB","none4","TMTC2,TTN,ZNF292", "none5","CACNA1I","HMCN1,TP53,ZNF292","none6","none7","HMCN1,TMTC2,ZNF292","RYR2,TMTC2,NEB","RYR2,NEB,TTN,CACNA1I","HMCM1,TP53","TTN","COL11A1,SLC5A10","COL11A1,CACNA1I","TTN,CACNA1I","RYR2,CACNA1I,ZNF292","TP53,TTN,CACNA1I" )
-Zelllines <- c(colnames(processed_data$expression))
-zellinesMutations <- as.data.frame(cbind(Zelllines, Genes))
+celllines <- c(colnames(processed_data$expression))
+cellinesMutations <- as.data.frame(cbind(celllines, Genes))
 
-rm(OneMatrix, Genes, ZelllinesMutations, Zelllines,i)
+rm(oneMatrix, Genes, celllinesMutations, celllines,i)
 ```
-The explanation for the previous extraction will be outlined in the following visualization part
+The explanation for the previous extraction will be outlined in the following visualization part.
 
 
 ## <span style="color:orange">**2.2 Visualizing our data**</span>
 
 ### <span style="color:orange">**2.2.1 Heatmap with the knock down data**</span>
 
-We start with a heatmap of our knock down data (the kd.ceres matrix).
-This matrix consist of gene knockdown scores. The impact of the knocked out gene on the cell survival is reflected by that score. The impact can be a reduction or an increase in proliferation. It could also mean that there is no change in cell proliferation at all. Smaller values refer to higher importance.
+Starting with a heatmap of the knock down data (the kd.ceres matrix).
+This matrix consists of gene knockdown scores. The impact of the knocked out gene on the cell survival is reflected by that score. The impact can be a reduction or an increase in proliferation. It could also mean that there is no change in cell proliferation at all. Smaller values refer to higher importance. Useing only the first 50 genes because otherwise the computer was overchallenged and could sometimes not produce the heatmap. 
 ```{r}
-pheatmap(as.matrix(processed_data$kd.ceres[1:50,]), clustering_method = "ward.D2",border_color = "white", fontsize = 10, 
+pheatmap(as.matrix(processed_data$kd.ceres[1:50,]), clustering_method = "ward.D2",border_color = "white", fontsize = 8, 
          main = paste0("kdCERES for potential 2nd site targets"),
          show_rownames = F, show_colnames = T,
          cutree_rows = 4,
@@ -252,18 +257,18 @@ pheatmap(as.matrix(processed_data$kd.ceres[1:50,]), clustering_method = "ward.D2
 
 ### <span style="color:orange">**2.2.2 Distribution of the expression values between the different cell lines**</span>
 
-We create a boxplot with the expression matrix to see how the expression of the genes is distributed over the different cell lines. 
+Creating a boxplot with the expression matrix to see how the expression of the genes is distributed over the different cell lines. 
 ```{r}
 ggplot(data = generalPlottingData$expression, aes(x=Sample, y=Value)) +
-  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
+  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + # reconstructing the outliers a bit (reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no leghend will be needed)
         legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), # defining the orientation of the text on the x-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
 ```
    
    
@@ -276,34 +281,32 @@ ggplot(data = generalPlottingData$expression, aes(x=Sample, y=Value)) +
 
 ### <span style="color:orange">**2.2.3 Plotting how often a gene is mutated over all cell line**</span>
 
-This plot should show us the mutation rate of a gene.
+A second boxplot using the mutation matrix should show generally how often genes are mutated.
 ```{r}
 geneCounts <- cbind(geneCounts, "Mutations per Gene")
 
 ggplot(data = geneCounts, aes(x="Mutations per Gene", y=Value)) +
-  geom_boxplot(aes(fill = "Mutations per Gene"), outlier.size = 2, outlier.alpha = 0.2) + #reconstruct the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust= 0.5, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+  geom_boxplot(aes(fill = "Mutations per Gene"), outlier.size = 2, outlier.alpha = 0.2) + # reconstructing the outliers a bit (so reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no leghend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust= 0.5, size = 10), # defining the orientation of the text on the x-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
 ```
 
 ***
 
-> * *So we have seen that the expression values show a different distribution for the different cell lines. Different expression values can arise from gene mutaitons of specific genes*
-> * *So the question is if there are mutations occuring more often than others. We suspect that these may be one of the reasons for the differing expression values.*
-> * * So as we can see: yes there are Mutations which occure significantly more often.*
+> * * As it can bee seen in the boxplot, there are genes which significantly mutated more often than others.*
+> * *We have a different number of mutations per gene. Following this it shoud be possible to identify the genes which mutated most.*
 
 ***
 
 ### <span style="color:orange">**2.2.4 Top 10 mutated genes**</span>
 
-Now we want to see which Mutations are the top 10 mutated Genes. 
- 
+Now we want to see which mutations are the top 10 mutated genes. 
 ```{r}
 plotData <- geneCounts[1:10, ,drop = FALSE]
 
@@ -311,15 +314,15 @@ plotData$Gene <- rownames(plotData)
 
 ggplot(data = plotData) +
   (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no legend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no legend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
 rm(plotData)
 ```
 
@@ -334,7 +337,7 @@ rm(plotData)
 General questions: 
 
 
-> * can we group the different Driver mutations together so that we can see in which other genes the Cell lines with a specific driver mutation differentiate?
+> * Can we group the different driver mutations together so that we can see in which other genes the cell lines with a specific driver mutation differentiate?
 > * With Dimnsionality reduction we could gain insight which other genes are our secound targets. 
 
 
@@ -346,8 +349,8 @@ drivergene <- 3
 # determines which of the driver mutations will be seen in the cluster at the x axis
 dataset <- processed_data$expression # determines which dataset we use
 
-colnames(dataset)[which(colnames(dataset) %in% unique(zellinesMutations[which(zellinesMutations[,1] == rownames(geneCounts)[drivergene]),2]))] <- rownames(geneCounts)[drivergene]
-colnames(dataset) <- zellinesMutations$Genes
+colnames(dataset)[which(colnames(dataset) %in% unique(cellinesMutations[which(cellinesMutations[,1] == rownames(geneCounts)[drivergene]),2]))] <- rownames(geneCounts)[drivergene]
+colnames(dataset) <- cellinesMutations$Genes
 
 cor.mat = cor(dataset[1:50,], method = "spearman")
 cor.dist = as.dist(1 - cor.mat)
@@ -363,19 +366,19 @@ rm(drivergene, realcelllinenames, dataset, cor.hc, cor.mat, cor.dist)
 Performing a k-means.
 ```{r}
 dataset <- t(processed_data$expression[-which(rownames(processed_data$expression) %in% rownames(geneCounts)[1:10]),]) 
-# determines which dataset we use
-# we are trying to cluster the cell lines with the same drivermutations in the same cluster according to the 
-# expression data without the expression of the Drivermutaitons
-# because we want to see what is driving the differences betweent the cell lines except for the Drivermutation expression values
+# determining which dataset we use
+# trying to cluster the cell lines with the same driver mutations in the same cluster according to the 
+# expression data without the expression of the driver mutations
+# Searching for the cause of the diffences between the cell lines besides the expression of the driver mutations 
 
-rownames(dataset) <- zellinesMutations$Genes
+rownames(dataset) <- cellinesMutations$Genes
 
 dataset <- dataset[,-which(apply(dataset, 2, function(x) {
   var(x)
 }) == 0)]
 ```
 
-For choosing the best number centers for the clusters we try the kink method.
+For choosing the best number centers for the clusters the kink method was used.
 ```{r}
 wss = sapply(1:9, function(k) {
   kmeans(x = dataset, centers = k)$tot.withinss
@@ -385,16 +388,16 @@ plot(1:9, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Tota
 
 ***
 
-> * *But theres no kink in this curve so we need to use other methods to tell us how much centers to choose.*
+> * *But theres no kink in this curve so we need to use other methods to tell us how much centers would be best to choose.*
 
 ***
 
 Now we try the silouette method.
 ```{r}
 fviz_nbclust(dataset, kmeans, method = "silhouette")
-# the clustering with two centers seems to be the best by far according to the 
+# according to the silhouette method the clustering with two centers seems to be the best one
 
-# were taking a look at the silhouette values for the clustering with two centers and 
+# taking a look at the clustering with different centers (2, 4, 5, 10) 
 km = kmeans(x =dataset, centers = 2, nstart = 100)
 plot(silhouette(km$cluster,dist(dataset)), main = "Silhouette Values for 2 clusters")
 
@@ -403,15 +406,15 @@ km3 <- kmeans(dataset, centers = 5, nstart = 100)
 km4 <- kmeans(dataset, centers = 4, nstart = 100)
 km5 <- kmeans(dataset, centers = 10, nstart = 100)
 
-p1 <- fviz_cluster(km2,geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 2")
-p2 <- fviz_cluster(km3, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 5")
-p3 <- fviz_cluster(km4, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 4")
-p4 <- fviz_cluster(km5, geom = "text", labelsize = 8, data = dataset) + ggtitle("k = 10")
+p1 <- fviz_cluster(km2,geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 2")
+p2 <- fviz_cluster(km3, geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 5")
+p3 <- fviz_cluster(km4, geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, geom = "text", labelsize = 4, data = dataset) + ggtitle("k = 10")
 
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 
-plot(p4) # clearly the clustering with 10 centers does not conclude in clusters with the same Drivermutations
-# the reason for that may be that most of our cell lines have more than one Driver mutation
+plot(p4) # clustering with 10 centers does not conclude in clusters with the same driver mutations
+# having more than one driver mutation in most cell lines may cause this
 
 plot(p1) 
 
@@ -421,33 +424,33 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
 ***
 
 > * *The clustering with two centers seems to be the best one.*
-> * *Our next step in the pca will be to see which of the genes drive the differentation of the celllines in this plot because they will be the most variable and thus  most interesting ones.*
+> * *Our next step in the pca will be to see which of the genes drive the differentation of the celllines in this plot because they will be the most variable and thus most interesting ones.*
 
 ***
 
 # <span style="color:orange">**3.3 PCA**</span>
 
-Now after we saw how the data clustered together we want to see what is driving the differences. We are looking at the first two Principal Components 
+Investigating with a principal component analysis why the data clusters together the way it does. Looking at the first two principal components because they are the most interesting. 
 ```{r}
-#drivergene <- 4 # determines which of the Drivermutations will be seen in the cluster at the x axis
-dataset <- processed_data$expression # determines which dataset we use
+#drivergene <- 4 # determining which of the driver mutations will be seen in the cluster at the x axis
+dataset <- processed_data$expression # determining which dataset will be used
 
 
 #colnames(dataset)[which(colnames(dataset) %in% unique(ZelllinesMutations[which(ZelllinesMutations[,1] == topDriverGenes[drivergene]),2]))] <- topDriverGenes[drivergene]
-colnames(dataset)<- zellinesMutations$Genes
+colnames(dataset)<- cellinesMutations$Genes
 
 pca = prcomp(t(dataset), center = F, scale. = F)
 summary(pca)
-#zum Anzeigen von labels (Zelllinien)
+# showing labels (cell lines)
 
 
 fviz_eig(pca)
 str(pca)
 autoplot(pca, colour = 'blue')
 fviz_pca_ind(pca,
-             col.ind = "cos2", # Color by the quality of representation
+             col.ind = "cos2", # color by the quality of representation
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
+             repel = TRUE,     # Avoid text overlapping
 )
 ```
 
@@ -483,20 +486,20 @@ colnames(top100var.contrib)[1] <- "Contribution"
 
 ggplot(data = top100var.contrib) +
   (geom_bar(mapping = aes(x = Genes, y = Contribution), stat = "identity")) +
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no leghend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 5), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the y-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
 ```
 
 ***
 
-> * *These are the Components which are contributing the most to our variation in the data. Maybe we will find some of these in our result of the p-test.*
+> * *These are the components which are contributing the most to our variation in the data. Maybe we will find some of these in our result of the p-test.*
 
 *** 
 
@@ -509,29 +512,29 @@ rm(drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var
 
 We want to perform a p-test and compare the p-values. 
 ```{r}
-driverGenes <- rownames(geneCounts)[1:10] #only use the TOP 10 driver genes
+driverGenes <- rownames(geneCounts)[1:10] # only using the TOP 10 driver genes
 ttestgenes <- rownames(processed_data$kd.ceres)
 
 potSecondSites <- lapply(seq_along(driverGenes), function(a) {
-  genePicker <- driverGenes[a] #pick one driver gene
+  genePicker <- driverGenes[a] # picking one driver gene
   print(paste0("I am doing driver mut: ", a))
   output <- sapply(seq_along(rownames(processed_data$kd.ceres)), function(b) { #the kdCERES matrix is of interest take its' rownames as refrence
-    secondSitePicker <- rownames(processed_data$kd.ceres)[b] #pick a potetnial 2nd site target
+    secondSitePicker <- rownames(processed_data$kd.ceres)[b] # picking a potetnial 2nd site target
     if (secondSitePicker != genePicker) {
-      drMUT <- processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == genePicker),] #pick the driver mut data
-      sndMUT <- as.vector(processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == secondSitePicker),]) #pick the 2nd site data
-      cor.val <- cor.test(unlist(drMUT, use.names=FALSE) , unlist(sndMUT, use.names=FALSE), method = "spearman") #make a spearman correlation
-      return(cor.val$p.value) #return the p-values
+      drMUT <- processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == genePicker),] # picking the driver mut data
+      sndMUT <- as.vector(processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == secondSitePicker),]) # picking the 2nd site data
+      cor.val <- cor.test(unlist(drMUT, use.names=FALSE) , unlist(sndMUT, use.names=FALSE), method = "spearman") # making a spearman correlation
+      return(cor.val$p.value) # returning the p-values
     } else {
       return(1)
     }
   })
-  names(output) <- rownames(processed_data$kd.ceres) #rename all
-  output <- as.data.frame(output) #get a nice dataframe
+  names(output) <- rownames(processed_data$kd.ceres) # renaming all
+  output <- as.data.frame(output) # getting a nice data frame
   return(output)
 })
-names(potSecondSites) <- driverGenes #rename the list of lists
-lapply(potSecondSites, head) #look at the nice data
+names(potSecondSites) <- driverGenes # renaming the list of lists
+lapply(potSecondSites, head) # looking at the nice data
 ```
 
 Now that we got all those p-values we want to order the data according to their p-values. So we can see the smallest ones which are the most important ones. 
@@ -542,7 +545,7 @@ potSecondSites <- lapply(potSecondSites, function(a){
 })
 ```
 
-Selecting the 20 Genes out of every DriverGene List with the lowest p score
+Selecting the 20 genes out of every DriverGene List with the lowest p score.
 ```{r}
 potSecondSitestop20 <- lapply(seq_along(potSecondSites), function (a){
   output <- potSecondSites[[a]][1:20,]
@@ -552,15 +555,15 @@ names(potSecondSitestop20) <- driverGenes
 
 ggplot(data = potSecondSitestop20$TTN) +
   (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
-  theme_bw(base_size = 7) + #format the size of the theme nicely
-  theme(legend.position= "none", #define the legend position (here no leghend will be needed)
-        legend.direction="horizontal", #define the legend direction if one is there
-        plot.title = element_text(hjust = 0.5), #make the title of the plot into the middle
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), #define the orientation of the text on the x-axis
-        legend.title= element_blank(), #no title of the legend should be plotted
-        axis.title.x = element_blank(), #no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
-        strip.text.y = element_text(angle = 90)) #define the orientation of the text of the y-axis
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no legend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the y-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
 
 rm(potSecondSites, ttestgenes)
 ```
@@ -569,10 +572,9 @@ rm(potSecondSites, ttestgenes)
 
 ## <span style="color:orange">**5.1 Predicting the expression of our driver genes with all the data**</span>
 
-First creating the dataframe for the multiple linear regression with all the dataframes as columns, the rows are every gene in every cell line
+Creating a data frame for the multiple linear regression. In this data frame all the columns are the data frames and the rows represent the genes in every cell line.
 
-Doing the multiple linear regression. Then comparing the predicted values of our model with the real values of the test_data by spearman correlaiton
-We perform this with every driver gene.
+With this data frame the linear regression is performed. After that the predicted values are compared with the real values of the data_set by a spearman correlation. Performing this with every driver gene.
 ```{r}
 a <- generalPlottingData$expression[,1:3]
 a <-a[,c(1,3,2)]
@@ -582,16 +584,15 @@ kd.prob <- generalPlottingData$kd.prob[,2]
 
 RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
 
-# doing the multiple linear Regression 
-# then comparint the predicted values of our model with the real values 
-# of the test_data by spearman correlaiton
-# doing this for every Driver Gene
+# doing the multiple linear regression 
+# comparing the predicted values of our model with the real values of the test_data by spearman correlaton
+# doing this for every driver gene
 
 Regressionanalysis <-lapply(1:10, function(x){
   RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
   Driverexpression <- c()
-  for (i in 1:34) {
-    a <- 16970*i
+  for (i in 1:34) { # 34 = te skin cancer cell lines
+    a <- 16970*i # 16970 = number of genes
     c <- (16970* (i-1))+1
     b <- colnames(processed_data$expression)[i]
     Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[x],b]
@@ -600,17 +601,17 @@ Regressionanalysis <-lapply(1:10, function(x){
   RegData <- cbind(RegData,Driverexpression)
   RegData <-as.data.frame(RegData)
   colnames(RegData) <- as.vector(colnames(RegData))
-  set.seed(123) #initialize the random numbers
-  split = sample.split(RegData, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
-  training_set = subset(RegData, split == TRUE) #use the labels to get the training data
+  set.seed(123) # initializing the random numbers
+  split = sample.split(RegData, SplitRatio = 0.8) # splitting the dataset into 4/5 Training and 1/5 Testing dataset
+  training_set = subset(RegData, split == TRUE) # using the labels to get the training data
   test_set = subset(RegData, split == FALSE) 
   rm(RegData)
-  # Fitting Multiple Linear Regression to the Training set
-  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
-  # Predicting the Test set results
-  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
-  test_set$Prediction = y_pred$fit #add your predictions to the dataset
-  #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
+  # fitting the multiple linear regression to the Training set
+  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) # predicting profit based on ALL (=.) the input variables for one company 
+  # predicting the test set results
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) # predicting the expression based on the testing data 
+  test_set$Prediction = y_pred$fit # adding the predictions to the dataset
+  # comparing the predictions (last column) with the real values of the startups (2nd last column)
   Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
   return(Results)
 })
@@ -638,57 +639,6 @@ print(ResultsRegression)
 # using just our top 20 out of the statistical testing we hoped to see that the p values would not increase that much 
 # this would verify our these that these genes are the essential components which drive the differnet expression of the Driver Gene 
 # as you can see below this ist not the case and the p values are very much increased
-
-Regressionanalysistop20 <-lapply(1:10, function(x){
-  a <- generalPlottingData$expression[which(generalPlottingData$expression[,3] %in% as.character(potSecondSitestop20[[x]][,2])),1:3]
-  a <-a[,c(1,3,2)]
-  copynumber <- generalPlottingData$copynumber[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
-  kd.ceres <- generalPlottingData$kd.ceres[which(generalPlottingData$kd.ceres[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
-  kd.prob <- generalPlottingData$kd.prob[which(generalPlottingData$kd.prob[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
-  RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
-  h <- length(generalPlottingData$expression[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2])
-  Driverexpression <- c()
-  for (i in 1:34) {
-    a <- h*i
-    c <- (h* (i-1))+1
-    b <- colnames(processed_data$expression)[i]
-    Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[x],b]
-  }
-  print(paste0("I am doing driver mut: ", rownames(geneCounts)[x]))
-  RegData <- cbind(RegData,Driverexpression)
-  RegData <-as.data.frame(RegData)
-  colnames(RegData) <- as.vector(colnames(RegData))
-  set.seed(123) #initialize the random numbers
-  split = sample.split(RegData, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
-  training_set = subset(RegData, split == TRUE) #use the labels to get the training data
-  test_set = subset(RegData, split == FALSE) 
-  rm(RegData)
-  # Fitting Multiple Linear Regression to the Training set
-  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
-  # Predicting the Test set results
-  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
-  test_set$Prediction = y_pred$fit #add your predictions to the dataset
-  #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
-  Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
-  return(Results)
-})
-names(Regressionanalysistop20) <- rownames(geneCounts)[1:10]
-Regressionanalysistop20 <- as.vector(Regressionanalysistop20)
-
-ResultsRegressiontop20 <- melt(lapply(1:length(Regressionanalysistop20), function(x){
-  return(Regressionanalysistop20[[x]][3])
-}))
-ResultsRegressiontop20 <- cbind(ResultsRegressiontop20,melt(lapply(1:length(Regressionanalysistop20), function(x){
-  return(Regressionanalysistop20[[x]][1])
-})))
-
-ResultsRegressiontop20$L2 <- rownames(geneCounts)[1:10]
-ResultsRegressiontop20 <- ResultsRegressiontop20 [,c(2,1,4)]
-colnames(ResultsRegressiontop20) <- c("DriverGene", "pvalue", "Svalue" )
-
-print(ResultsRegressiontop20)
-
-
 ```
 
 ***
@@ -696,7 +646,7 @@ print(ResultsRegressiontop20)
 
 *** 
 
-# <span style="color:orange">**RESULTS**</span>
+# <span style="color:orange">**6. RESULTS**</span>
 
 ```{r}
 Resultspresentation <- lapply(1:length(potSecondSitestop20), function(x){
@@ -714,9 +664,11 @@ which(top100var.contrib[1:20,2] %in% as.character(melt(Resultspresentation)[,1])
 
 ***
 
-> * *The 2nd targets from the pca and the regression are not the same like we have wished (due to the data or mistakes in the skript) because the kmeans and the pca doesnt reproduce the same 2nd side targets.*
-> * *However we present our results: the 20top 2nd site genes from our p-test* 
-> * *The regression model shows a really low p-value at which grounds we conclude that following gens should be taken in account as targets for drug development in skin cancer.*
+> * *Our ten driver mutations are : TTN, TP53, HMCN1, TMTC2, RYR2,  CACNA1I, ZNF292, NEB, COL11A1, SLC5A10. We defined them with a barplot at the beginning.*
+> * *Our goal was to find possible second side targets interacting with these driver mutations more often than other mutations and which are of a greater importance than other interactin genes.* 
+> * *We tried to define these targets with a PCA and a p-test.But the 2nd targets from the pca and the regression are not overlapping. This could be due to the data or mistakes we made in the skript. Also the kmeans and the PCA do not reproduce the same second side targets.*
+> * *However we decided to present the targets we defined with the p-test. As shown above we have listed the top 20 second side targets from the p-test for each gene.* 
+> * *The regression model shows a really low p-value at which leads us to the conclucion that the above listed genes could be taken in account as targets for drug development in skin cancer.*
 
 ***
 
