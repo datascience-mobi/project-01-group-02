@@ -1,0 +1,908 @@
+---
+title: "Group 02 - Skin Cancer"
+author: "Leonie Thomas, Isabel Potthof, Elif Tosun and Marlene Khin"
+date: "24.07.2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#<span style="color:orange">**Preparations**</span>
+
+# 1.Loading following packages
+library(ggplot2)
+library(relaimpo)
+library(factoextra)
+library(gridExtra)
+library(reshape2)
+library(data.table)
+library(cluster)
+library(rstudioapi)
+library(pheatmap)
+library(caret)
+library(tidyverse)
+library(dendextend)
+library(factoextra)
+library(devtools)
+library(ggfortify)
+library(rstudioapi)  
+library(data.table) 
+library(ggplot2) 
+library(scales) 
+library(stats)
+library(caTools)  
+```
+
+# <span style="color:orange">**First step: Setting the sys-path and loading the data**</span>
+```{r eval = FALSE}
+root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
+data = readRDS(paste0(root.dir, "/DepMap19Q1_allData.RDS"))
+```
+
+```{r include=FALSE}
+data = readRDS("C:/Users/LeoTh/Documents/GitHub/project-01-group-02/DepMap19Q1_allData.RDS")
+```
+
+
+# <span style="color:orange">**1. Data cleanup**</span>
+
+```{r include=FALSE}
+
+#Defining a new matrix only containing the mutation data which is structured differently from the other matrices.
+mut <- data$mutation 
+```
+  
+
+```{r include=FALSE}
+#Additionally, to the mutation matrix another matrix is needed containing all matrices except the mutation data.
+'%!in%' <- function(x,y)!('%in%'(x,y))  # defining an operator that will only pick the data that is NOT defined in the list; so the data that needs to be excluded
+dt_new <- lapply(which(names(data) %!in% "mutation"), function(a) data[[a]]) # extracting the non-mutation data 
+names(dt_new) <- names(data)[which(names(data) %!in% "mutation")] # renaming the data with the original names
+#our data now consists out of 2 lists 
+names(dt_new)
+head(mut[[1]])#just picking one cell line as an example
+```
+
+* Extracting the cell lines of the skin cancer. 
+* Creating a new dataframe which only contains the data we will work with.
+```{r}
+sample_case = c("Skin Cancer") 
+``` 
+
+* Searching only for the primary disease Skin Cancer in the annotation matrix.
+```{r}
+samples = data$annotation$DepMap_ID[which(data$annotation$Primary.Disease == sample_case)]
+```
+* A vector containing all the cell lines with skin cancer as the primary disease is obtained.
+* --> 34 cell lines have the primary disease skin cancer.
+
+* Extracting all cell lines defined in the previous step out of the data (except the mutation matrix).
+```{r}
+processed_data <- lapply(1:length(dt_new), function(a) { # picking the data for our sample 
+  dat_picker <- dt_new[[a]] # picking one file at each iteration 
+  if(names(dt_new[a])== "annotation"){ # treating the annotations differnetly because the cell line names are in a colum and are not the columnames like in the other matrices
+    output <- dat_picker[which(dat_picker[,1] %in% samples),]
+  } else {
+  output <- dat_picker[,which(colnames(dat_picker) %in% samples)]# only taking the skin cancer cell lines 
+  output <- output[complete.cases(output),] # only taking rows without NAs 
+  output <- output[order(rownames(output)),] # reordering the genes according to their name
+  }
+  return(output)
+})
+names(processed_data) <- names(dt_new) # renameing the objects according to the original data
+rm(dt_new,sample_case) # removing objects which are not need anymore
+
+```
+
+* Extracting the skin cancer cell lines out of the mutation matrix.
+
+```{r include=FALSE}
+#Extracting the previously defined cell lines from the mutation data.
+ids = which(names(mut) %in% samples) 
+allDepMap_mutation_SkinCancer = lapply(ids, function(a) {
+  mut[[a]]})
+rm(mut, ids, data) #tidying
+```
+
+* Losing the mutations which are not deleterious meaning not interesting to us.
+
+```{r include=FALSE}
+#Losing the mutations which are not deleterious meaning not interesting to us.
+allDepMap_mutation_SkinCancer = lapply(1:34, function(a) {
+  allDepMap_mutation_SkinCancer[[a]][which(allDepMap_mutation_SkinCancer[[a]][,"isDeleterious"]== TRUE), ]
+    })
+names(allDepMap_mutation_SkinCancer) <- samples
+```
+
+* Using a if iteration with the condition to just extract the genes which are in every data frame.
+* Putting all data back together in one object.
+
+
+```{r include=FALSE}
+#Losing all genes which are not in every data frame. 
+#First, all gene names have to be picked out of the data.
+Genenames <- unique(c(rownames(processed_data[[1]]),rownames(processed_data[[2]]),rownames(processed_data[[3]]),rownames(processed_data[[4]])))
+
+#Then picking these genes which are in all 4 data frames which are needed for further analysis. 
+i <- 1
+out <- vector("character", length(seq_along(1:16970)))# length of the matrix depending on how many Genes we have which are in every data frame
+for (x in seq_along(Genenames)) {
+  if(Genenames[x] %in% rownames(processed_data$expression) & Genenames[x] %in% rownames(processed_data$copynumber) & Genenames[x] %in% rownames(processed_data$kd.ceres) & Genenames[x] %in% rownames(processed_data$kd.prob))
+  {out[i] <- Genenames[x]
+  i <- i+1
+  } 
+}
+
+allDepMap_annotation_SkinCancer <- processed_data$annotation # saving the annotation object in a seperate dataframe
+# because it doesnt contain any information about the genes 
+
+processed_data <- lapply(processed_data[1:4], function(a) {
+  a <- a[which(rownames(a) %in% out),]
+  return(a)
+})
+
+processed_data$mutation <- allDepMap_mutation_SkinCancer
+processed_data$annotation <- allDepMap_annotation_SkinCancer
+rm(i,out, Genenames,x, allDepMap_annotation_SkinCancer, samples, allDepMap_mutation_SkinCancer)
+
+```
+
+* Looking at the processed data.
+```{r echo= FALSE}
+processed_data$expression[1:10,1:5]
+processed_data$copynumber[1:10,1:5]
+processed_data$kd.ceres[1:10,1:5]
+processed_data$kd.prob[1:10,1:5]
+processed_data$annotation[1:10,1:5]
+processed_data$mutation$`ACH-000004`[1:10,1:5]
+```
+
+# <span style="color:orange">**2. Visualizing our data**</span>
+  
+* Converting all data in a format which is useable for or plotting package.
+
+```{r include=FALSE}
+#Not all the data is needed for plotting so the data is prepared for the following plots.
+
+generalPlottingData <- lapply(1:(length(processed_data)-2), function(a) { # the annotation matrix is not needed
+  dtPicker <- processed_data[[a]]
+  out <- melt(dtPicker) # binding the data togehter that it has samples and values as columns
+  out$Gene <- rep(rownames(dtPicker), ncol(dtPicker)) # adding the genes; probably this might be useful in a later stage
+  out$Case <- names(processed_data)[1:(length(processed_data)-1)][a]# adding a labelling column
+  colnames(out) <- c("Sample", "Value", "Gene", "Case") # renameing the columns
+  return(out)
+})
+names(generalPlottingData) <- names(processed_data)[1:(length(processed_data)-2)] # renameing the data 
+```
+
+* Extracting the data we need for plotting out of the mutation matrix.
+
+```{r include=FALSE}
+#Producing a vector encompasing every gene which at least mutated once.
+singleGenes <- as.vector(unique(as.data.frame(rbindlist(lapply(seq_along(processed_data$mutation), function(a) {
+  out <- as.data.frame(as.vector(unique(processed_data$mutation[[a]]$Hugo_Symbol)))}))))[,1])
+```
+
+
+```{r include=FALSE}
+#Creating a data frame containing the mutation rate of every gene.
+geneCounts <- sapply(seq_along(singleGenes), function(a) {
+  genePicker <- singleGenes[a] # picking one gene
+  sumGene <- lapply(seq_along(processed_data$mutation), function(b) {
+    mutPicker <- processed_data$mutation[[b]] # picking one of the 34 mutation lists
+    out <- as.data.frame(length(which(mutPicker$Hugo_Symbol == genePicker))) # looking how often an entry is in the mutation list
+    return(out)
+  })
+  geneCount <- colSums(as.data.frame(rbindlist(sumGene))) # summing it up to get the total count for each gene
+  return(geneCount)
+})
+names(geneCounts) <- singleGenes # renameing 
+geneCounts <- as.data.frame(geneCounts) # creating a nice data frame
+colnames(geneCounts) <- c("Value")
+geneCounts <- geneCounts[order(-geneCounts$Value), , drop = FALSE] # sorting the data frame
+head(geneCounts) 
+```
+
+
+```{r include=FALSE}
+#Extacting the data for the top 10 which will be our driver mutations in the further investigation.
+dataTopDriverGenes <- lapply(1:(length(processed_data)-2), function(a) { # picking the data for our sample 
+  dat_picker <- processed_data[[a]] # picking one file at each iteration 
+  output <- dat_picker[which(rownames(dat_picker) %in% rownames(geneCounts)[1:10]),] # comparing the rownames of the picked data with the names of the 10 most mutated genes
+  return(output)
+})
+names(dataTopDriverGenes) <- names(processed_data)[1:4]
+
+rm(singleGenes)
+```
+
+
+ 
+```{r include=FALSE}
+#### <span style="color:orange">**2.1.3 Extracting the drivermutations for every cell line**</span>
+
+#Putting all mutation data in one matrix.
+oneMatrix <- data.frame()
+for (i in c(1:34)) { # 34 is the number of cell lines of interest
+  oneMatrix <- rbind(oneMatrix,processed_data$mutation[[i]][,Hugo_Symbol:DepMap_ID])
+}
+```
+
+
+```{r include=FALSE}
+#Extracting just the column of the gene name and the cell line.
+celllinesMutations <- oneMatrix[which(oneMatrix$Hugo_Symbol %in% rownames(geneCounts)[1:10] ),]
+celllinesMutations <- cbind(celllinesMutations$Hugo_Symbol, celllinesMutations$DepMap_ID)
+View(celllinesMutations)
+```
+
+
+```{r include=FALSE}
+#Extracting the drivermuations for every cell line out of the data frame and putting it into another data frame so it can be used for plotting.
+Genes <- c("COL11A1,TMTC2,TTN", " HMCN1", "COL11A1,HMCN1,SLC510", "HMCN1,TMTC2", "COL11A1,TP53,TTN","none","ZNF292","RYR2","HMCN" ,"none2","none3", "TP53, TTN","HMCN1", "TTN,ZNF292","TMTC2,TP53,NEB","TP53", "TMTC2,NEB","none4","TMTC2,TTN,ZNF292", "none5","CACNA1I","HMCN1,TP53,ZNF292","none6","none7","HMCN1,TMTC2,ZNF292","RYR2,TMTC2,NEB","RYR2,NEB,TTN,CACNA1I","HMCM1,TP53","TTN","COL11A1,SLC5A10","COL11A1,CACNA1I","TTN,CACNA1I","RYR2,CACNA1I,ZNF292","TP53,TTN,CACNA1I" )
+celllines <- c(colnames(processed_data$expression))
+cellinesMutations <- as.data.frame(cbind(celllines, Genes))
+
+rm(oneMatrix, Genes,celllines,i)
+```
+```{r include=FALSE}
+#The explanation for the previous extraction will be outlined in the following visualization part.
+```
+
+
+
+
+## <span style="color:orange">**2.1 Heatmap with the the kd.ceres matrix (knock down data)**</span>
+
+* Random sample of first 50 genes.
+* To get an overview if the genes influence cell proliferation.
+```{r}
+pheatmap(as.matrix(processed_data$kd.ceres[1:50,]), clustering_method = "ward.D2",border_color = "white", fontsize = 8, 
+         main = paste0("kdCERES for potential 2nd site targets"),
+         show_rownames = F, show_colnames = T,
+         cutree_rows = 4,
+         cutree_cols = 2, 
+         fontsize_row=8) 
+```
+   
+   
+***
+
+> * *Some genes lead to a higher, some to a lower value.*
+> * *-->Further investigation which genes play a role in cell proliferation and could be involved in cancer development.*
+
+***
+
+## <span style="color:orange">**2.2 Distribution of the expression values between the different cell lines**</span>
+
+* Creating a boxplot with the expression matrix.
+* To see how the expression of the genes is distributed over the different cell lines. 
+```{r echo=FALSE}
+data <- generalPlottingData$expression
+
+ggplot(data, aes(x=Sample, y= Value)) +
+  geom_boxplot(aes(fill = Sample), outlier.size = 0.1, outlier.alpha = 0.2) + # reconstructing the outliers a bit (reduce them in size; because we are interested in the boxplots and not the outliers)
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no leghend will be needed)
+        legend.direction="horizontal", #define the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), # defining the orientation of the text on the x-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
+```
+
+***
+
+> * *Many genes are distributed between the 25 and 75 quantile.*
+> * *There are also some outliers which are of special interest in the following data analysis.*
+
+***
+
+## <span style="color:orange">**2.3 Top 10 mutated genes**</span>
+
+* Creating a barplot to see which genes are most often mutated.
+* These genes were characterized when extracting the useable information out of the mutation matrix. 
+```{r echo=FALSE}
+plotData <- geneCounts[1:10, ,drop = FALSE]
+
+plotData$Gene <- rownames(plotData)
+
+ggplot(data = plotData) +
+  (geom_bar(mapping = aes(x = Gene, y = Value), stat = "identity")) +
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no legend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
+rm(plotData)
+```
+
+***
+
+> * *The barplot does not mention any of the expected genes, so in the end an analysis of the biological background is needed.*
+
+***
+# <span style="color:orange">**3. Dimensionality reduction**</span>
+
+## <span style="color:orange">**3.1 Hierachical clustering**</span>
+
+Creating a hierachical cluster with our driver mutations.
+```{r echo = FALSE}
+drivergene <- 5 
+# determines which of the driver mutations will be seen in the cluster at the x axis
+dataset <- processed_data$expression # determines which dataset we use
+
+colnames(dataset)[which(colnames(dataset) %in% unique(celllinesMutations[which(celllinesMutations[,1] == rownames(geneCounts)[drivergene]),2]))] <- rownames(geneCounts)[drivergene] 
+
+cor.mat = cor(dataset[1:50,], method = "spearman")
+cor.dist = as.dist(1 - cor.mat)
+cor.hc = hclust(cor.dist, method = "ward.D2")
+cor.hc = as.dendrogram(cor.hc)
+plot(cor.hc, las = 2, cex.lab = 2, main = "Clustering of the expression values of all cell lines")
+
+rm(drivergene, dataset, cor.hc, cor.mat, cor.dist)
+```
+
+> * We hoped that the driver mutations cluster together, but they don`t. 
+> * Because most of the timer there is more than one driver mutation in every cell line.
+
+## <span style="color:orange">**3.2 K-means**</span>
+
+* Performing a k-means.
+* Using the kink method to identify the best number of clusters. 
+
+```{r include=FALSE}
+dataset <- t(processed_data$expression[-which(rownames(processed_data$expression) %in% rownames(geneCounts)[1:10]),]) 
+# determining which dataset we use
+# trying to cluster the cell lines with the same driver mutations in the same cluster according to the 
+# expression data without the expression of the driver mutations
+# Searching for the cause of the diffences between the cell lines besides the expression of the driver mutations 
+
+rownames(dataset) <- cellinesMutations$Genes
+
+dataset <- dataset[,-which(apply(dataset, 2, function(x) {
+  var(x)
+}) == 0)]
+```
+
+```{r echo = FALSE}
+wss = sapply(1:9, function(k) {
+  kmeans(x = dataset, centers = k)$tot.withinss
+})
+plot(1:9, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Total within-clusters sum of squares")
+```
+
+* Now we try the silouette method.
+```{r}
+fviz_nbclust(dataset, kmeans, method = "silhouette")
+# according to the silhouette method the clustering with two centers seems to be the best one
+
+# taking a look at the clustering with different centers (2, 4, 5, 10) 
+km = kmeans(x =dataset, centers = 2, nstart = 100)
+plot(silhouette(km$cluster,dist(dataset)), main = "Silhouette Values for 2 clusters", cex=0.5)
+
+# taking a look at the clustering with different centers (2, 4, 5, 10) 
+km2 <- kmeans(dataset, centers = 2, nstart = 100)
+km3 <- kmeans(dataset, centers = 5, nstart = 100)
+km4 <- kmeans(dataset, centers = 4, nstart = 100)
+km5 <- kmeans(dataset, centers = 10, nstart = 100)
+
+```
+
+* Two clusters seem to be the best. 
+* But we want to take a look at different clusters.
+
+```{r}
+
+p1 <- fviz_cluster(km2,geom = "point", data = dataset) + ggtitle("k = 2")
+p2 <- fviz_cluster(km3, geom = "point", data = dataset) + ggtitle("k = 5")
+p3 <- fviz_cluster(km4, geom = "point", data = dataset) + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, geom = "point", data = dataset) + ggtitle("k = 10")
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+
+```
+
+
+```{r echo=FALSE}
+p4 <- fviz_cluster(km5, geom = "text", labelsize = 9, data = dataset) + ggtitle("k = 10")
+plot(p4) # clustering with 10 centers does not conclude in clusters with the same driver mutations
+# having more than one driver mutation in most cell lines may cause this
+p1 <- fviz_cluster(km2,geom = "text", labelsize = 9, data = dataset) + ggtitle("k = 2")
+plot(p1) 
+
+rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
+```
+
+***
+
+> * *The clustering with two centers seems to be the best one.*
+> * *Our next step in the pca will be to see which of the genes drive the differentiation of the celllines in this plot because they will be the most variable and thus most interesting ones.*
+
+***
+
+# <span style="color:orange">**3.3 PCA**</span>
+
+* Performing a pca investigate what drives the difference in the clustering.
+
+```{r}
+dataset <- processed_data$expression # determining which dataset will be used
+colnames(dataset)<- cellinesMutations$Genes # sets the labels to the Drivermutaion every Cell lines
+
+pca = prcomp(t(dataset), center = F, scale. = F)
+summary(pca)
+
+
+fviz_eig(pca)
+
+autoplot(pca, colour = 'blue')
+```
+
+```{r echo= FALSE}
+fviz_pca_ind(pca,
+             col.ind = "cos2", # color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE    # Avoid text overlapping
+)
+```
+
+***
+
+> * *Again we see two clusters.*
+> * *The first principal component contains the most information about the data.*
+
+***
+
+
+```{r echo=FALSE}
+var_coord_func <- function(loadings, comp.sdev){
+  loadings*comp.sdev
+}
+
+loadings <- pca$rotation
+sdev <- pca$sdev
+var.coord <- t(apply(loadings, 1, var_coord_func, sdev)) 
+
+var.cos2 <- var.coord^2
+comp.cos2 <- apply(var.cos2, 2, sum)
+contrib <- function(var.cos2, comp.cos2){var.cos2*100/comp.cos2}
+
+var.contrib <- t(apply(var.cos2,1, contrib, comp.cos2))
+head(var.contrib[, 1:4])
+```
+
+```{r}
+top100var.contrib <- var.contrib[,1]
+top100var.contrib <- as.data.frame(top100var.contrib[order(-top100var.contrib)])
+top100var.contrib$Genes <- rownames(top100var.contrib)
+top100var.contrib <- top100var.contrib[1:100,]
+colnames(top100var.contrib)[1] <- "Contribution"
+```
+
+```{r echo=FALSE}
+ggplot(data = top100var.contrib) +
+  (geom_bar(mapping = aes(x = Genes, y = Contribution), stat = "identity")) +
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no leghend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 5), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the y-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
+```
+
+***
+
+> * *These are the components which are contributing the most to our variation in the data. Maybe we will find some of these in our result of the p-test.*
+
+*** 
+
+```{r include=FALSE}
+rm(drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var.contrib, var.coord, var.cos2, comp.cos2, sdev)
+```   
+# <span style="color:orange">**4. Statistical test**</span>
+
+Aim : identify combinations of one Drivergene with one other gene which is strongly correlated 
+
+Data: Knockdown Data
+
+Procedure: 
+
+1. design a vector which contains the names of the 10 driver Mutaions 
+2. design a 2nd vector which contains the names of all the genes in our Data 
+3. design an iteration with the lapply function which compares one element of each of these vectors with one another
+4. we will select combination of genes with the lowest p-value 
+
+**Thereby we want to find genes with low p-values which indicates a high correlation. These Genes will be the subject of the further analysis steps.**
+
+```{r}
+driverGenes <- rownames(geneCounts)[1:10] # only using the TOP 10 driver genes
+ttestgenes <- rownames(processed_data$kd.ceres)
+
+potSecondSites <- lapply(seq_along(driverGenes), function(a) {
+  genePicker <- driverGenes[a] # picking one driver gene
+  output <- sapply(seq_along(rownames(processed_data$kd.ceres)), function(b) { #the kdCERES matrix is of interest take its' rownames as refrence
+    secondSitePicker <- rownames(processed_data$kd.ceres)[b] # picking a potetnial 2nd site target
+    if (secondSitePicker != genePicker) {
+      drMUT <- processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == genePicker),] # picking the driver mut data
+      sndMUT <- as.vector(processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == secondSitePicker),]) # picking the 2nd site data
+      cor.val <- cor.test(unlist(drMUT, use.names=FALSE) , unlist(sndMUT, use.names=FALSE), method = "spearman") # making a spearman correlation
+      return(cor.val$p.value) # returning the p-values
+    } else {
+      return(1)
+    }
+  })
+  names(output) <- rownames(processed_data$kd.ceres) # renaming all
+  output <- as.data.frame(output) # getting a nice data frame
+  return(output)
+})
+names(potSecondSites) <- driverGenes # renaming the list of lists
+```
+
+```{r, echo=FALSE}
+potSecondSites <- lapply(potSecondSites, function(a){
+  a <- as.data.frame(cbind(a$output, rownames(a)))
+  a <- a[order(a[1]), ]
+})
+```
+
+
+```{r, echo= FALSE}
+potSecondSitestop20 <- lapply(seq_along(potSecondSites), function (a){
+  output <- potSecondSites[[a]][1:20,]
+  return(output)
+})
+names(potSecondSitestop20) <- driverGenes
+```
+
+```{r, echo = FALSE}
+lapply(potSecondSitestop20, head)
+```
+
+
+```{r, echo=FALSE}
+
+ggplot(data = potSecondSitestop20$TTN) +
+  (geom_bar(mapping = aes(x = V2, y = V1), stat = "identity")) +
+  theme_bw(base_size = 7) + # formating the size of the theme nicely
+  theme(legend.position= "none", # defining the legend position (here no legend will be needed)
+        legend.direction="horizontal", # defining the legend direction if one is there
+        plot.title = element_text(hjust = 0.5), # making the title of the plot into the middle
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10), # defining the orientation of the text on the x-axis
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size = 4), # defining the orientation of the text on the y-axis
+        legend.title= element_blank(), # no title of the legend should be plotted
+        axis.title.x = element_blank(), # no title of the x-axis is relevant; because that would be samples and that is cleare due to the naming
+        strip.text.y = element_text(angle = 90)) # defining the orientation of the text of the y-axis
+
+rm(potSecondSites, ttestgenes)
+```
+
+
+
+> The Genes you see in the graph are the most important genes for the drivergene TTN. 
+
+# <span style="color:orange">**5. Multiple linear regression analysis**</span>
+
+## <span style="color:orange">**5.1 Predicting the expression of our driver genes with all the data**</span>
+
+Firstly we need to create a Dataframe with all the data we want to use in the multiple linear regression. 
+This should look like this: 
+
+```{r, echo=FALSE}
+a <- generalPlottingData$expression[,1:3]
+a <-a[,c(1,3,2)]
+copynumber <- generalPlottingData$copynumber[,2]
+kd.ceres <- generalPlottingData$kd.ceres[,2]
+kd.prob <- generalPlottingData$kd.prob[,2]
+
+RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
+
+  Driverexpression <- c()
+  for (i in 1:34) { # 34 = te skin cancer cell lines
+    a <- 16970*i # 16970 = number of genes
+    c <- (16970* (i-1))+1
+    b <- colnames(processed_data$expression)[i]
+    Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[1],b]
+  }
+RegData <- cbind(RegData,Driverexpression)
+  RegData <-as.data.frame(RegData)
+  colnames(RegData) <- as.vector(colnames(RegData))
+head(RegData)
+```
+
+```{r}
+a <- generalPlottingData$expression[,1:3]
+a <-a[,c(1,3,2)]
+copynumber <- generalPlottingData$copynumber[,2]
+kd.ceres <- generalPlottingData$kd.ceres[,2]
+kd.prob <- generalPlottingData$kd.prob[,2]
+
+RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
+
+Regressionanalysis <-lapply(1:10, function(x){
+  RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
+  Driverexpression <- c()
+  for (i in 1:34) { # 34 = te skin cancer cell lines
+    a <- 16970*i # 16970 = number of genes
+    c <- (16970* (i-1))+1
+    b <- colnames(processed_data$expression)[i]
+    Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[x],b]
+  }
+  RegData <- cbind(RegData,Driverexpression)
+  RegData <-as.data.frame(RegData)
+  colnames(RegData) <- as.vector(colnames(RegData))
+  set.seed(123) # initializing the random numbers
+  split = sample.split(RegData, SplitRatio = 0.8) # splitting the dataset into 4/5 Training and 1/5 Testing dataset
+  training_set = subset(RegData, split == TRUE) # using the labels to get the training data
+  test_set = subset(RegData, split == FALSE) 
+  rm(RegData)
+  # fitting the multiple linear regression to the Training set
+  regressor = lm( Driverexpression ~  copynumber + Value + kd.ceres + kd.prob , data = training_set) # predicting profit based on ALL (=.) the input variables for one company 
+  # predicting the test set results
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) # predicting the expression based on the testing data 
+  test_set$Prediction = y_pred$fit # adding the predictions to the dataset
+  # comparing the predictions (last column) with the real values of the startups (2nd last column)
+  Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
+  return(Results)
+})
+names(Regressionanalysis) <- rownames(geneCounts)[1:10]
+Regressionanalysis <- as.vector(Regressionanalysis)
+```
+
+```{r, echo=FALSE}
+rm(RegData,kd.ceres,kd.prob,copynumber,a)
+
+
+ResultsRegression <- melt(lapply(1:length(Regressionanalysis), function(x){
+  return(Regressionanalysis[[x]][3])
+}))
+ResultsRegression <- cbind(ResultsRegression,melt(lapply(1:length(Regressionanalysis), function(x){
+  return(Regressionanalysis[[x]][1])
+})))
+
+ResultsRegression$L2 <- rownames(geneCounts)[1:10]
+ResultsRegression <- ResultsRegression [,c(2,1,4)]
+colnames(ResultsRegression) <- c("DriverGene", "pvalue", "Svalue" )
+
+print(ResultsRegression)
+
+
+```
+
+***
+
+> * *Our Model is able to reproduce and predict the expression values of our driver genes.*
+> * *Using the top 20 out of the statistical testing we hope to verify our thesis that these Genes are most important for the drivergene expression. *
+***
+
+
+```{r include=FALSE}
+Regressionanalysistop20 <-lapply(1:10, function(x){
+  a <- generalPlottingData$expression[which(generalPlottingData$expression[,3] %in% as.character(potSecondSitestop20[[x]][,2])),1:3]
+  a <-a[,c(1,3,2)]
+  copynumber <- generalPlottingData$copynumber[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  kd.ceres <- generalPlottingData$kd.ceres[which(generalPlottingData$kd.ceres[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  kd.prob <- generalPlottingData$kd.prob[which(generalPlottingData$kd.prob[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2]
+  RegData <- cbind(a,copynumber,kd.ceres,kd.prob)
+  h <- length(generalPlottingData$expression[which(generalPlottingData$copynumber[,3] %in% as.character(potSecondSitestop20[[x]][,2])),2])
+  Driverexpression <- c()
+  for (i in 1:34) {
+    a <- h*i
+    c <- (h* (i-1))+1
+    b <- colnames(processed_data$expression)[i]
+    Driverexpression[c:a] <- processed_data$expression[rownames(geneCounts)[x],b]
+  }
+  RegData <- cbind(RegData,Driverexpression)
+  RegData <-as.data.frame(RegData)
+  colnames(RegData) <- as.vector(colnames(RegData))
+  set.seed(123) #initialize the random numbers
+  split = sample.split(RegData, SplitRatio = 0.8) #split the dataset into 4/5 Training and 1/5 Testing dataset
+  training_set = subset(RegData, split == TRUE) #use the labels to get the training data
+  test_set = subset(RegData, split == FALSE) 
+  rm(RegData)
+  # Fitting Multiple Linear Regression to the Training set
+  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+  # Predicting the Test set results
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
+  test_set$Prediction = y_pred$fit #add your predictions to the dataset
+  #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
+  Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
+  return(Results)
+})
+names(Regressionanalysistop20) <- rownames(geneCounts)[1:10]
+Regressionanalysistop20 <- as.vector(Regressionanalysistop20)
+
+ResultsRegressiontop20 <- melt(lapply(1:length(Regressionanalysistop20), function(x){
+  return(Regressionanalysistop20[[x]][3])
+}))
+ResultsRegressiontop20 <- cbind(ResultsRegressiontop20,melt(lapply(1:length(Regressionanalysistop20), function(x){
+  return(Regressionanalysistop20[[x]][1])
+})))
+
+ResultsRegressiontop20$L2 <- rownames(geneCounts)[1:10]
+ResultsRegressiontop20 <- ResultsRegressiontop20 [,c(2,1,4)]
+colnames(ResultsRegressiontop20) <- c("DriverGene", "pvalue", "Svalue" )
+
+```
+
+```{r}
+print(ResultsRegressiontop20)
+```
+
+
+***
+> * *With this result we can not define confidently the second targets.*
+
+*** 
+
+# <span style="color:orange">**6.Results**</span>
+
+```{r echo=FALSE}
+Resultspresentation <- lapply(1:length(potSecondSitestop20), function(x){
+  return(potSecondSitestop20[[x]][2])
+})
+
+names(Resultspresentation) <- rownames(geneCounts)[1:10]
+print(Resultspresentation)
+
+print(top100var.contrib[1:20,2])
+
+which(top100var.contrib[1:20,2] %in% as.character(melt(Resultspresentation)[,1]))
+
+```
+
+***
+
+> * *Our top 10 driver mutations are : TTN, TP53, HMCN1, TMTC2, RYR2,  CACNA1I, ZNF292, NEB, COL11A1, SLC5A10.*
+> * *Our goal was to find possible second side targets. *
+> * *Using a PCA and a p-test. *
+> * *But the 2nd targets from the pca and the regression are not the same once.*
+> * *Present the 20 top Genes for every driver gene from our p-test as a result of the data analysation. * 
+
+
+##Biological Background
+# <span style="color:orange">**6.Results**</span>
+
+ <dt>Driver mutation and second targets</dt>
+
+ 
+TTN       |TP53| 
+----------|---| 
+C18orf21  |CDNK1A| 
+NFIC      |RAD50| 
+TADA2A    |TAF4| 
+
+>In which context are our driver mutations to be put in and how do they interact with their second targets ?
+
+## TTN
+*largest protein in human genome also known as connectin*
+
+- Location: sacromere in steriated muscle
+
+- Function: connects the Z line to the M line in the sacromere 
+	    â€”> contration of cardiac and skeletal muscle
+	    
+- Related Disease: dilated cardiomyopathy 
+
+- Predicted second targets: C18orf21, NFIC, TADA2A 
+
+>C18orf21:chromosome 18 open reading frame 21  
+NFIC: cellular transcription factors  
+TADA2A: DNA-binding transcriptional activator proteins
+
+# Network of TTN and second targets
+
+![](C:/Users/LeoTh/Documents/GitHub/project-01-group-02/Bioinfobilder/genemania-network-2.jpg TTN.jpg)
+
+*
+>no direct link between driver mutation and second targets can be identified  
+
+
+## TP53
+*tumor suppresor protein*
+
+- Location: RNA expression in all tissues 
+
+# Protein expression of TP53
+
+![](C:/Users/LeoTh/Documents/GitHub/project-01-group-02/Bioinfobilder/1.png)
+
+*protein expression of TP53 in human tissue (3,4)*
+
+
+- Function:  regulation of cell cycle, apoptosis and genomic stabilty 
+
+- Related Disease: general Cancer-related genes 
+
+
+##TP53 and skin cancer 
+
+- TP53 is an UVR target
+
+- UVR-induced TP53 mutations accelerates BRAF-driven melanomagenesis
+
+
+Comparison of TP53 expression
+
+![](C:/Users/LeoTh/Documents/GitHub/project-01-group-02/Bioinfobilder/skin cancer staining.png)
+
+*arrows point at stained tissue with increased TP53 expression (10)*
+
+> possible second targets of TP53 could be intresting target point for skin cancer theraphy
+
+
+- Predicted second targets: CDKN1A, RAD50, TAF4
+ 
+#Network of TP53 and second targets
+
+![](C:/Users/LeoTh/Documents/GitHub/project-01-group-02/Bioinfobilder/TP53 .jpg)
+
+*Network is generated by GeneMANIA is shown above*
+
+>pathway of TP53 and CDKN1A are connected.  
+
+
+#Network of pathways between TP53 and CDKN1A
+
+![](C:/Users/LeoTh/Documents/GitHub/project-01-group-02/Bioinfobilder/genemania-network-3.jpg)
+
+*pathways conecting TP53 and CDKN1A generated by GeneMANIA are shown above*
+
+expression of CDKN1A is controlled by TP53,
+â€”> mediates the p53-dependent cell cycle G1 phase arrest
+
+
+##Conclusion
+
+- Our mathematical model was successfully able to predict the interaction between TP53 and and the second target CDKN1A
+
+- CDKN1A could be a possible sencond target in skin cancer therapy 
+
+References 
+(1) Akbani et al. (2015), Genomic Classification of Cutaneous Melanoma. Cell 161, 1681-1696  
+(2) Gigli M, Begay RL, Morea G, et al. A Review of the Giant Protein Titin
+in Clinical Molecular Diagnostics of Cardiomyopathies. Front Cardiovasc
+Med. 2016;3:21. Published 2016 Jul 21. doi:10.3389/fcvm.2016.00021  
+(3) Uhlén M et al, 2015. Tissue-based map of the human
+proteome. Science PubMed: 25613900 DOI: 10.1126/science.1260419,
+Human Protein Atlas  
+(4) Warde-Farley D, Donaldson SL, Comes O, Zuberi K, Badrawi R, Chao P, Franz M, Grouios C,
+Kazi F, Lopes CT, Maitland A, Mostafavi S, Montojo J, Shao Q, Wright G, Bader GD, Morris Q
+Nucleic Acids Res. 2010 Jul 1;38 Suppl:W214-20 PubMed Abstract  
+(5) Clancy T, Rødland EA, Nygard S, Hovig E. Predicting physical interactions between
+protein complexes. Mol Cell Proteomics. 2013;12(6):1723-1734. doi:10.1074/
+mcp.O112.019828  
+(6) Pruitt KD, Tatusova T, Brown GR, Maglott DR. NCBI Reference Sequences (RefSeq):
+current status, new features and genome annotation policy. Nucleic Acids Res.
+2012;40(Database issue):D130-D135. doi:10.1093/nar/gkr1079  
+(7) O'Leary NA, Wright MW, Brister JR, Ciufo S, Haddad D, McVeigh R, Rajput B, Robbertse
+B, Smith-White B, Ako-Adjei D, Astashyn A, Badretdin A, Bao Y, Blinkova O, Brover V,
+Chetvernin V, Choi J, Cox E, Ermolaeva O, Farrell CM, Goldfarb T, Gupta T, Haft D, Hatcher
+E, Hlavina W, Joardar VS, Kodali VK, Li W, Maglott D, Masterson P, McGarvey KM, Murphy
+MR, O'Neill K, Pujar S, Rangwala SH, Rausch D, Riddick LD, Schoch C, Shkeda A, Storz SS,
+Sun H, Thibaud-Nissen F, Tolstoy I, Tully RE, Vatsan AR, Wallin C, Webb D, Wu W,
+Landrum MJ, Kimchi A, Tatusova T, DiCuccio M, Kitts P, Murphy TD, Pruitt KD. Reference
+sequence (RefSeq) database at NCBI: current status, taxonomic expansion, and functional
+annotation.
+Nucleic Acids Res. 2016 Jan 4;44(D1):D733-45 PubMed
+Tatusova T, DiCuccio M, Badretdin A, Chetvernin V, Nawrocki EP, Zaslavsky L, Lomsadze
+A, Pruitt KD, Borodovsky M, Ostell J. NCBI prokaryotic genome annotation pipeline.
+Nucleic Acids Res. 2016 Aug 19;44(14):6614-24 PubMed
+Brister JR, Ako-Adjei D, Bao Y, Blinkova O. NCBI viral genomes resource. Nucleic Acids
+Res. 2015 Jan;43(Database issue):D571-7 PubMed  
+(8) Benjamin CL, Ananthaswamy HN. p53 and the pathogenesis of skin cancer. Toxicol
+Appl Pharmacol. 2007;224(3):241-248. doi:10.1016/j.taap.2006.12.006  
+(9) Soto JL, Cabrera CM, Serrano S, López-Nevot MA. Mutation analysis of genes that
+control the G1/S cell cycle in melanoma: TP53, CDKN1A, CDKN2A, and CDKN2B.
+BMC Cancer. 2005;5:36. Published 2005 Apr 8. doi:10.1186/1471-2407-5-36
+(10) Viros A, Sanchez-Laorden B, Pedersen M, et al. Ultraviolet radiation accelerates BRAF-driven melanomagenesis by targeting TP53. Nature. 2014;511(7510):478â€“482. doi:10.1038/nature13298
+
