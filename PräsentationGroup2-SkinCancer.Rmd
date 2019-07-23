@@ -42,7 +42,7 @@ data = readRDS(paste0(root.dir, "/DepMap19Q1_allData.RDS"))
 ```
 
 ```{r include=FALSE}
-data = readRDS("/Users/eliftosun/Desktop/DepMap19Q1_allData.RDS")
+data = readRDS("C:/Users/Isip/Documents/Project 2/DepMap19Q1_allData.RDS")
 ```
 
 
@@ -329,7 +329,7 @@ rm(plotData)
 ***
 # <span style="color:orange">**3. Dimensionality reduction**</span>
 
-## <span style="color:orange">**3.1 Hierachical clustering**</span>
+## <span style="color:orange">**3.1 Hierarchical clustering**</span>
 
 Creating a hierachical cluster with our driver mutations.
 ```{r echo = FALSE}
@@ -348,8 +348,8 @@ plot(cor.hc, las = 2, cex.lab = 2, main = "Clustering of the expression values o
 rm(drivergene, dataset, cor.hc, cor.mat, cor.dist)
 ```
 
-> * We hoped that the driver mutations cluster together, but they don`t. 
-> * Because most of the timer there is more than one driver mutation in every cell line.
+> * The driver mutations do not cluster together as we hoped.
+> * Because most of the time there is more than one driver mutation in every cell line.
 
 ## <span style="color:orange">**3.2 K-means**</span>
 
@@ -380,24 +380,20 @@ plot(1:9, wss, type = "b", pch = 19, xlab = "Number of clusters K", ylab = "Tota
 * Now we try the silouette method.
 ```{r}
 fviz_nbclust(dataset, kmeans, method = "silhouette")
-# according to the silhouette method the clustering with two centers seems to be the best one
 
-# taking a look at the clustering with different centers (2, 4, 5, 10) 
+# Taking a look at the plot of the two clusters.
 km = kmeans(x =dataset, centers = 2, nstart = 100)
 plot(silhouette(km$cluster,dist(dataset)), main = "Silhouette Values for 2 clusters", cex=0.5)
+```
 
-# taking a look at the clustering with different centers (2, 4, 5, 10) 
+* Two clusters are the optimum. 
+* But we want to take a look at different clusters with centers (2, 4, 5, 10).
+
+```{r}
 km2 <- kmeans(dataset, centers = 2, nstart = 100)
 km3 <- kmeans(dataset, centers = 5, nstart = 100)
 km4 <- kmeans(dataset, centers = 4, nstart = 100)
 km5 <- kmeans(dataset, centers = 10, nstart = 100)
-
-```
-
-* Two clusters seem to be the best. 
-* But we want to take a look at different clusters.
-
-```{r}
 
 p1 <- fviz_cluster(km2,geom = "point", data = dataset) + ggtitle("k = 2")
 p2 <- fviz_cluster(km3, geom = "point", data = dataset) + ggtitle("k = 5")
@@ -428,11 +424,11 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
 
 # <span style="color:orange">**3.3 PCA**</span>
 
-* Performing a pca investigate what drives the difference in the clustering.
+* Performing a pca to investigate what drives the difference in the clustering.
 
 ```{r}
 dataset <- processed_data$expression # determining which dataset will be used
-colnames(dataset)<- cellinesMutations$Genes # sets the labels to the Drivermutaion every Cell lines
+colnames(dataset)<- cellinesMutations$Genes # sets the labels to the driver mutaion for every cell lines
 
 pca = prcomp(t(dataset), center = F, scale. = F)
 summary(pca)
@@ -500,13 +496,14 @@ ggplot(data = top100var.contrib) +
 
 ***
 
-> * *These are the components which are contributing the most to our variation in the data. Maybe we will find some of these in our result of the p-test.*
+> * *These are the components contributing the most to our variation in the data. Maybe we will find some of these in our result of the p-test.*
 
 *** 
 
 ```{r include=FALSE}
 rm(drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var.contrib, var.coord, var.cos2, comp.cos2, sdev)
 ```   
+
 # <span style="color:orange">**4. Statistical test**</span>
 
 Aim : Identify combinations of one driver gene with one other gene which are strongly correlated.
