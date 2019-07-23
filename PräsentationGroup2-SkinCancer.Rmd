@@ -511,18 +511,18 @@ rm(drivergene, realcelllinenames, dataset, loadings, pca, realcelllinenames, var
 ```   
 # <span style="color:orange">**4. Statistical test**</span>
 
-Aim : identify combinations of one Drivergene with one other gene which is strongly correlated 
+Aim : Identify combinations of one driver gene with one other gene which are strongly correlated.
 
 Data: Knockdown Data
 
 Procedure: 
 
-1. design a vector which contains the names of the 10 driver Mutaions 
-2. design a 2nd vector which contains the names of all the genes in our Data 
-3. design an iteration with the lapply function which compares one element of each of these vectors with one another
-4. we will select combination of genes with the lowest p-value 
+1. Design a vector which contains the names of the 10 driver mutations. 
+2. Design a 2nd vector which contains the names of all the genes in our data. 
+3. Design an iteration with the lapply function which calculates the p-value of every combination of the elemtents of these two vectors.
+4. We will select combination of genes with the lowest p-value.
 
-**Thereby we want to find genes with low p-values which indicates a high correlation. These Genes will be the subject of the further analysis steps.**
+**Hypothesis: We can find gene combinations with low p-values which indicates a high correlation.**
 
 ```{r}
 driverGenes <- rownames(geneCounts)[1:10] # only using the TOP 10 driver genes
@@ -530,10 +530,10 @@ ttestgenes <- rownames(processed_data$kd.ceres)
 
 potSecondSites <- lapply(seq_along(driverGenes), function(a) {
   genePicker <- driverGenes[a] # picking one driver gene
-  output <- sapply(seq_along(rownames(processed_data$kd.ceres)), function(b) { #the kdCERES matrix is of interest take its' rownames as refrence
+  output <- sapply(seq_along(rownames(processed_data$kd.ceres)), function(b) { 
     secondSitePicker <- rownames(processed_data$kd.ceres)[b] # picking a potetnial 2nd site target
     if (secondSitePicker != genePicker) {
-      drMUT <- processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == genePicker),] # picking the driver mut data
+      drMUT <- processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == genePicker),] # picking the mutation data
       sndMUT <- as.vector(processed_data$kd.ceres[which(rownames(processed_data$kd.ceres) == secondSitePicker),]) # picking the 2nd site data
       cor.val <- cor.test(unlist(drMUT, use.names=FALSE) , unlist(sndMUT, use.names=FALSE), method = "spearman") # making a spearman correlation
       return(cor.val$p.value) # returning the p-values
@@ -568,6 +568,7 @@ names(potSecondSitestop20) <- driverGenes
 lapply(potSecondSitestop20, head)
 ```
 
+Example for one driver mutation: 
 
 ```{r, echo=FALSE}
 
@@ -586,15 +587,15 @@ ggplot(data = potSecondSitestop20$TTN) +
 rm(potSecondSites, ttestgenes)
 ```
 
-
-
-> The Genes you see in the graph are the most important genes for the drivergene TTN. 
+> Identified Combinations seem most likely to have a functional relationship/interaction with the driver mutations. 
+> Verification of this hypotheses with more data. 
 
 # <span style="color:orange">**5. Multiple linear regression analysis**</span>
 
 ## <span style="color:orange">**5.1 Predicting the expression of our driver genes with all the data**</span>
 
-Firstly we need to create a Dataframe with all the data we want to use in the multiple linear regression. 
+1. create a Dataframe with all the data
+
 This should look like this: 
 
 ```{r, echo=FALSE}
@@ -646,11 +647,10 @@ Regressionanalysis <-lapply(1:10, function(x){
   test_set = subset(RegData, split == FALSE) 
   rm(RegData)
   # fitting the multiple linear regression to the Training set
-  regressor = lm( Driverexpression ~  copynumber + Value + kd.ceres + kd.prob , data = training_set) # predicting profit based on ALL (=.) the input variables for one company 
+  regressor = lm( Driverexpression ~  copynumber + Value + kd.ceres + kd.prob , data = training_set)  
   # predicting the test set results
   y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) # predicting the expression based on the testing data 
   test_set$Prediction = y_pred$fit # adding the predictions to the dataset
-  # comparing the predictions (last column) with the real values of the startups (2nd last column)
   Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
   return(Results)
 })
@@ -710,9 +710,9 @@ Regressionanalysistop20 <-lapply(1:10, function(x){
   test_set = subset(RegData, split == FALSE) 
   rm(RegData)
   # Fitting Multiple Linear Regression to the Training set
-  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) #predict profit based on ALL (=.) the input variables for one company 
+  regressor = lm(Driverexpression ~ Value + copynumber + kd.ceres + kd.prob , data = training_set) 
   # Predicting the Test set results
-  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on your testing data 
+  y_pred = predict(regressor, newdata = test_set, se.fit = TRUE) #predict the expression based on the testing data 
   test_set$Prediction = y_pred$fit #add your predictions to the dataset
   #Now compare the Predictions (last column) with the real values of the startups (2nd last column)
   Results <- cor.test(test_set$Driverexpression, test_set$Prediction, method = "spearman", exact=FALSE)
@@ -740,13 +740,16 @@ print(ResultsRegressiontop20)
 
 
 ***
-> * *With this result we can not define confidently the second targets.*
+> * *This result of the Regression analysis do not confirm our thesis.*
 
 *** 
 
 # <span style="color:orange">**6.Results**</span>
 
-```{r echo=FALSE}
+> Using the data of the PC1 to confirm our thesis.
+
+
+```{r}
 Resultspresentation <- lapply(1:length(potSecondSitestop20), function(x){
   return(potSecondSitestop20[[x]][2])
 })
@@ -760,12 +763,15 @@ which(top100var.contrib[1:20,2] %in% as.character(melt(Resultspresentation)[,1])
 
 ```
 
+> The Genes in our PC1 are not the same as the ones we characterized in the mulitple linear regression. 
+> No conformation of the thesis with the PCA. 
+
 ***
 
 > * *Our top 10 driver mutations are : TTN, TP53, HMCN1, TMTC2, RYR2,  CACNA1I, ZNF292, NEB, COL11A1, SLC5A10.*
 > * *Our goal was to find possible second side targets. *
-> * *Using a PCA and a p-test. *
-> * *But the 2nd targets from the pca and the regression are not the same once.*
+> * *Using a PCA,a p-test and a multiple regression analysis. *
+> * *But the 2nd targets identified by the different methods are not the same once.*
 > * *Present the 20 top Genes for every driver gene from our p-test as a result of the data analysation. * 
 
 
