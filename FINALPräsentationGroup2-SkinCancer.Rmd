@@ -35,8 +35,7 @@ library(stats)
 library(caTools)  
 ```
 
-# <span style="color:orange">**First step: Setting the sys-path and loading the data**</span>
-```{r eval = FALSE}
+```{r eval = FALSE, include = FALSE}
 root.dir = dirname(rstudioapi::getSourceEditorContext()$path)
 data = readRDS(paste0(root.dir, "/DepMap19Q1_allData.RDS"))
 ```
@@ -397,7 +396,7 @@ plot(silhouette(km$cluster,dist(dataset)), main = "Silhouette Values for 2 clust
 
 ***
 
-```{r echo = FALSE}
+```{r echo = FALSE, warning = FALSE}
 km2 <- kmeans(dataset, centers = 2, nstart = 100)
 km3 <- kmeans(dataset, centers = 5, nstart = 100)
 km4 <- kmeans(dataset, centers = 4, nstart = 100)
@@ -420,7 +419,7 @@ plot(p4) # clustering with 10 centers does not conclude in clusters with the sam
 p1 <- fviz_cluster(km2,geom = "text", labelsize = 9, data = dataset) + ggtitle("k = 2")
 plot(p1) 
 
-rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
+rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset)
 ```
 
 ***
@@ -428,7 +427,6 @@ rm(km,km2,km3,km4,km5,p1,p2,p3,p4, dataset,wss)
 <div style="text-align: justify"> 
 
 > * *The clustering with two centers seems to be the best one.*
-> * *The driver mutations do not cluster together as we hoped. Because most of the time there is more than one driver mutation in every cell line.*
 > * *Our next step in the pca will be to see which of the genes drive the differentiation of the celllines in this plot because they will be the most variable and thus most interesting ones.*
 
 </div>
@@ -838,18 +836,7 @@ TADA2A    |TAF4|
 
 ## <span style="color:orange">**TTN**</span>
  
-*largest protein in human genome also known as connectin*
-
-* Location: sacromere in steriated muscle
-
-* Function: connects the Z line to the M line in the sarcomere 
-	    --> contration of cardiac and skeletal muscle
-	    
-* Related Disease: dilated cardiomyopathy 
-
-* Predicted second targets: C18orf21, NFIC, TADA2A 
-
-## <span style="color:orange">**Network of TTN and second targets**</span>
+### <span style="color:orange">**Network of TTN and second targets**</span>
 
 ![](C:/Users/Isip/Documents/GitHub/project-01-group-02/Bioinfobilder/genemania-network-2.jpg TTN.jpg){ width=60% }
 
